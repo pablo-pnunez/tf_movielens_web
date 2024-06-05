@@ -2,7 +2,7 @@ import pandas as pd
 import json
 
 # Cargar los datos de MovieLens
-ratings = pd.read_csv('ml-latest-small/ratings.csv').drop(columns=["timestamp"]).sample(frac=.25)
+ratings = pd.read_csv('ml-latest-small/ratings.csv').drop(columns=["timestamp"]).sample(frac=.1)
 
 
 # Convertir a JSON

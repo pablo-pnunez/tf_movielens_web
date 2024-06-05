@@ -33,7 +33,7 @@ async function trainModel(userInputs, movieInputs, outputs, numUsers, numMovies,
     const dotProduct = tf.layers.dot({axes: -1}).apply([userVector, movieVector]);
 
     // Sumar los biases
-    const addBias = dotProduct // tf.layers.add().apply([dotProduct, userBiasVector, movieBiasVector]);
+    const addBias = tf.layers.add().apply([dotProduct, userBiasVector, movieBiasVector]);
 
     const scaledOutput = tf.layers.activation({activation: 'relu'}).apply(addBias);
 
@@ -55,6 +55,7 @@ async function trainModel(userInputs, movieInputs, outputs, numUsers, numMovies,
     let batchCount = 0;
     let epochCount = 0;
     let last_loss = null;
+    const lossHistory = [];
 
     await model.fit([userTensor, movieTensor], ratingsTensor, {
         epochs: epochs,
@@ -70,9 +71,10 @@ async function trainModel(userInputs, movieInputs, outputs, numUsers, numMovies,
             onEpochEnd: async (epoch, logs) => { 
                 epochCount++;
                 last_loss = logs.loss.toFixed(4)
+                lossHistory.push(last_loss);
                 const userEmbeddings = await userEmbeddingLayer.getWeights()[0].array();
                 const movieEmbeddings = await movieEmbeddingLayer.getWeights()[0].array();
-                self.postMessage({ type: 'plot', userEmbeddings, movieEmbeddings});
+                self.postMessage({ type: 'plot', lossHistory, userEmbeddings, movieEmbeddings});
             },
             onTrainEnd: () => {
                 statusCallback('Training completed!');

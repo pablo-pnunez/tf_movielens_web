@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const statusDiv = document.getElementById('status');
-    const progressBar = document.getElementById('progress-bar');
+    const progressBar = document.getElementsByClassName('progress-bar')[0] //.getElementById('progress-bar');
     
     // Cargar los datos
     const response = await fetch('ratings.json');
@@ -30,16 +30,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Crear un nuevo Web Worker para el entrenamiento del modelo
     const trainWorker = new Worker('train-worker.js');
 
+    let embeddingsPlotCreated = false;
+    let lossPlotCreated = false;
+
     // Escuchar los mensajes del Web Worker para el entrenamiento
     trainWorker.addEventListener('message', (event) => {
-        const { type, status, progress } = event.data;
+        const { type, status, progress, lossHistory, userEmbeddings, movieEmbeddings } = event.data;
         if (type === 'status') {
             statusDiv.textContent = status;
         } else if (type === 'progress') {
             progressBar.value = progress;
+            progressBar.style.width = `${progress}%`;
         } else if (type === 'plot') {
-            const { userEmbeddings, movieEmbeddings } = event.data;
-            plotEmbeddings(userEmbeddings, movieEmbeddings, numUsers, numMovies);
+            if (!embeddingsPlotCreated) {
+                createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies);
+                embeddingsPlotCreated = true;
+            } else {
+                updateEmbeddingsPlot(userEmbeddings, movieEmbeddings);
+            }
+            if (!lossPlotCreated) {
+                createLossPlot(lossHistory);
+                lossPlotCreated = true;
+            } else {
+                updateLossPlot(lossHistory);
+            }
         }
     });
 
@@ -47,10 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     trainWorker.postMessage({ userInputs, movieInputs, outputs, numUsers, numMovies });
 
     // Función para visualizar embeddings
-    const plotEmbeddings = async (userEmbeddings, movieEmbeddings, numUsers, numMovies) => {
-        // const userEmbeddings = await userEmbeddingLayer.getWeights()[0].array();
-        // const movieEmbeddings = await movieEmbeddingLayer.getWeights()[0].array();
-
+    const createEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies) => {
         const userCoords = Array.from({length: numUsers}, (_, i) => userEmbeddings[i]);
         const movieCoords = Array.from({length: numMovies}, (_, i) => movieEmbeddings[i]);
 
@@ -73,8 +84,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         const data = [userTrace, movieTrace];
+        var layout = { 
+            margin: {t:50, l:50, r:50, b:50},
+            legend: { x: 1, xanchor: 'right', y: 1 }
+        };
 
-        Plotly.newPlot('plot', data);
+        Plotly.newPlot('emb-plot', data, layout, {responsive: true});
+    };
+
+    const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings) => {
+        const userCoords = Array.from({length: userEmbeddings.length}, (_, i) => userEmbeddings[i]);
+        const movieCoords = Array.from({length: movieEmbeddings.length}, (_, i) => movieEmbeddings[i]);
+
+        Plotly.restyle('emb-plot', 'x', [userCoords.map(coord => coord[0]), movieCoords.map(coord => coord[0])]);
+        Plotly.restyle('emb-plot', 'y', [userCoords.map(coord => coord[1]), movieCoords.map(coord => coord[1])]);
+    };
+
+    const createLossPlot = (lossHistory) => {
+        const trace = {
+            x: lossHistory.map((_, i) => i + 1),
+            y: lossHistory,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Loss',
+        };
+
+        var layout = { margin: {t:50, l:50, r:50, b:50} };
+        const data = [trace];
+        Plotly.newPlot('loss-plot', data, layout, {responsive: true});
+    };
+
+    const updateLossPlot = (lossHistory) => {
+        Plotly.restyle('loss-plot', 'x', [lossHistory.map((_, i) => i + 1)]);
+        Plotly.restyle('loss-plot', 'y', [lossHistory]);
     };
 
 

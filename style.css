@@ -13,19 +13,14 @@ body {
     margin-top: 20px;
 }
 
-#progress-bar {
-    width: 100%;
-    height: 20px;
-    margin-top: 20px;
-}
-
 .centered-plot {
     display: block;
     margin-left: auto;
     margin-right: auto;
-    width: 50%; /* Ajustar el tamaño según sea necesario */
-    height: 50vw; /* Mantener el aspecto cuadrado */
-    max-height: 50%; /* Mantener el aspecto cuadrado en pantallas grandes */
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    /* height: 50vw; *//* Mantener el aspecto cuadrado */
+    /* max-height: 50%;*/
 }
 @media (max-width: 600px) {
     .centered-plot {
