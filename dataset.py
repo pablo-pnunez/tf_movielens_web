@@ -16,10 +16,16 @@ def pandas_to_json(data, filename):
 
 # Para ranking
 train_ranking = pd.read_csv('data/ranking/pj_train.csv', header=None, names=["u", "b", "w"])
+train_ranking = train_ranking -1 # Adaptamos los IDS
 pandas_to_json(train_ranking, "data/ranking/train")
 
 test_ranking = pd.read_csv('data/ranking/pj_test.csv', header=None, names=["u", "b", "w"])
+test_ranking = test_ranking -1 # Adaptamos los IDS
 pandas_to_json(test_ranking, "data/ranking/test")
 
 movies = pd.read_csv('data/ranking/movies.csv')
+movies["ID"] = movies["ID"] -1 # Adaptamos los IDS
 pandas_to_json(movies, "data/ranking/movies")
+
+info = pd.DataFrame([[train_ranking["u"].max()+1, movies["ID"].max()+1]], columns=["numUsers", "numItems"])
+pandas_to_json(info, "data/ranking/info")

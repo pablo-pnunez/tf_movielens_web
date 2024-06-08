@@ -1,47 +1,55 @@
-importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.12.0/dist/tf.min.js');
+importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js');
+
 
 async function trainModel(trainData, valData, numUsers, numMovies, statusCallback, progressBarCallback) {
     // Preparar los datos de entrenamiento
     const trainUserTensor = tf.tensor2d(trainData.u, [trainData.u.length, 1]);
-    const trainMovieTensor = tf.tensor2d(trainData.m, [trainData.m.length, 1]);
-    const trainRatingsTensor = tf.tensor1d(trainData.r);
+    const trainBetterMovieTensor = tf.tensor2d(trainData.b, [trainData.b.length, 1]);
+    const trainWorseMovieTensor = tf.tensor2d(trainData.w, [trainData.w.length, 1]);
 
     // Preparar los datos de validación
     const valUserTensor = tf.tensor2d(valData.u, [valData.u.length, 1]);
-    const valMovieTensor = tf.tensor2d(valData.m, [valData.m.length, 1]);
-    const valRatingsTensor = tf.tensor1d(valData.r);
+    const valBetterMovieTensor = tf.tensor2d(valData.b, [valData.b.length, 1]);
+    const valWorseMovieTensor = tf.tensor2d(valData.w, [valData.w.length, 1]);
 
     // Crear el modelo de factorización de matrices
     const userInput = tf.input({ shape: [1], name: 'userInput' });
-    const movieInput = tf.input({ shape: [1], name: 'movieInput' });
+    const betterMovieInput = tf.input({ shape: [1], name: 'betterMovieInput' });
+    const worseMovieInput = tf.input({ shape: [1], name: 'worseMovieInput' });
+
+    // El puto tf no tiene permite mezclar escalares y capas, además no tiene sub para restar
+    const zeroInput = tf.input({ shape: [1], name: 'zeros' });
+    const minusOneInput = tf.input({ shape: [1], name: 'minusOne' });
+    const marginInput = tf.input({ shape: [1], name: 'margin' });
 
     const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: 2, inputLength: 1 });
     const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: 2, inputLength: 1 });
 
     const userEmbedding = userEmbeddingLayer.apply(userInput);
-    const movieEmbedding = movieEmbeddingLayer.apply(movieInput);
+    const betterMovieEmbedding = movieEmbeddingLayer.apply(betterMovieInput);
+    const worseMovieEmbedding = movieEmbeddingLayer.apply(worseMovieInput);
 
     const userVector = tf.layers.flatten().apply(userEmbedding);
-    const movieVector = tf.layers.flatten().apply(movieEmbedding);
+    const betterMovieVector = tf.layers.flatten().apply(betterMovieEmbedding);
+    const worseMovieVector = tf.layers.flatten().apply(worseMovieEmbedding);
 
-    // Añadir bias a las embeddings
-    const userBias = tf.layers.embedding({ inputDim: numUsers, outputDim: 1, inputLength: 1 }).apply(userInput);
-    const movieBias = tf.layers.embedding({ inputDim: numMovies, outputDim: 1, inputLength: 1 }).apply(movieInput);
+    // Calcular el producto escalar
+    const betterDotProduct = tf.layers.dot({ axes: -1 }).apply([userVector, betterMovieVector]);
+    const worseDotProduct = tf.layers.dot({ axes: -1 }).apply([userVector, worseMovieVector]);
 
-    const userBiasVector = tf.layers.flatten().apply(userBias);
-    const movieBiasVector = tf.layers.flatten().apply(movieBias);
+    // Crear la función de margen
+    // const margin = tf.scalar(1.0);
+    // const diff = tf.layers.subtract().apply([betterDotProduct, worseDotProduct]);
+    // const marginLoss = tf.layers.add().apply([tf.layers.maximum().apply([tf.layers.subtract().apply([margin, diff]), tf.scalar(0)])]);
 
-    // Calcular el dot product y añadir bias
-    const dotProduct = tf.layers.dot({ axes: -1 }).apply([userVector, movieVector]);
-
-    // Sumar los biases
-    const addBias = tf.layers.add().apply([dotProduct, userBiasVector, movieBiasVector]);
-
-    const scaledOutput = tf.layers.activation({ activation: 'relu' }).apply(addBias);
+    // Simulación de la resta y cálculo del margen
+    const minus_worse = tf.layers.multiply().apply([worseDotProduct, minusOneInput]);
+    const margin_diff = tf.layers.add().apply([marginInput, minus_worse, betterDotProduct]);
+    const marginLoss = tf.layers.maximum().apply([margin_diff, zeroInput]);
 
     const model = tf.model({
-        inputs: [userInput, movieInput],
-        outputs: scaledOutput
+        inputs: [userInput, betterMovieInput, worseMovieInput, minusOneInput, zeroInput, marginInput],
+        outputs: marginLoss
     });
 
     model.compile({
@@ -50,8 +58,8 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
     });
 
     // Entrenar el modelo
-    const epochs = 100;
-    const batchSize = 128;
+    const epochs = 10;
+    const batchSize = 1024;
     const totalBatches = Math.ceil(trainData.u.length / batchSize) * epochs;
 
     let batchCount = 0;
@@ -61,10 +69,20 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
     const lossHistory = [];
     const valLossHistory = [];
 
-    await model.fit([trainUserTensor, trainMovieTensor], trainRatingsTensor, {
+    // Crear tensores para las entradas auxiliares
+    const trainMinusOneTensor = tf.fill([trainData.u.length, 1], -1);
+    const trainZeroTensor = tf.zeros([trainData.u.length, 1]);
+    const trainMarginTensor = tf.fill([trainData.u.length, 1], 1.0); // Margen de 1.0
+
+    const valMinusOneTensor = tf.fill([valData.u.length, 1], -1);
+    const valZeroTensor = tf.zeros([valData.u.length, 1]);
+    const valMarginTensor = tf.fill([valData.u.length, 1], 1.0); // Margen de 1.0
+
+
+    await model.fit([trainUserTensor, trainBetterMovieTensor, trainWorseMovieTensor, trainMinusOneTensor, trainZeroTensor, trainMarginTensor], tf.zeros([trainData.u.length]), {
         epochs: epochs,
         batchSize: batchSize,
-        validationData: [[valUserTensor, valMovieTensor], valRatingsTensor],
+        validationData: [[valUserTensor, valBetterMovieTensor, valWorseMovieTensor, valMinusOneTensor, valZeroTensor, valMarginTensor], tf.zeros([valData.u.length])],
         callbacks: {
             onBatchEnd: async (batch, logs) => {
                 batchCount++;

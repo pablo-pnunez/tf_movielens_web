@@ -17,18 +17,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         const seconds = String(now.getSeconds()).padStart(2, '0');
         const timestamp = `[${hours}:${minutes}:${seconds}] `;
         const fullLine = "\n" + timestamp + line;
-
+    
         queue.push(fullLine);
         processQueue();
     };
 
     const processQueue = () => {
         if (isWriting || queue.length === 0) return;
-
+    
         isWriting = true;
         const line = queue.shift();
         let index = 0;
-
+    
         const writeCharacter = () => {
             if (index < line.length) {
                 consola.textContent += line.charAt(index);
@@ -40,35 +40,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 processQueue(); // Procesar la siguiente línea en la cola
             }
         };
-
+    
         writeCharacter();
     };
 
     // Comprobar si WebGL está disponible
     if (tf.ENV.get('WEBGL_VERSION') > 0) {
         console_log('WebGL is enabled');
+
     } else {
         console_log('WebGL is not enabled');
     }
-
+    
     // Cargar los datos de entrenamiento
     console_log("Cargando los datos de entrenamiento...");
-    let trainData, valData, numUsers, numMovies;
+    let trainData, valData;
     try {
-        const trainResponse = await fetch('data/ranking/train.json');
+        const trainResponse = await fetch('data/regression/ratings_train.json');
         trainData = await trainResponse.json();
-
+        console_log("Datos de entrenamiento cargados.");
+        
         console_log("Cargando los datos de validación...");
-        const valResponse = await fetch('data/ranking/test.json');
+        const valResponse = await fetch('data/regression/ratings_val.json');
         valData = await valResponse.json();
-
-        console_log("Cargando información del dataset...");
-        const infRoesponse = await fetch('data/ranking/info.json');
-        infoData = await infRoesponse.json();
-        numUsers = infoData.numUsers[0];
-        numMovies = infoData.numItems[0];
-        console_log("Datos cargados.");
-
+        console_log("Datos de validación cargados.");
     } catch (error) {
         console_log(`Error al cargar los datos: ${error}`);
         return;
@@ -81,20 +76,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     console_log("Preprocesando datos...");
 
     const processData = (data) => {
-        const userInputs = data.u.slice(); // Clonar los arrays
-        const betterMovieInputs = data.b.slice(); // Clonar los arrays
-        const worseMovieInputs = data.w.slice(); // Clonar los arrays
-        return { userInputs, betterMovieInputs, worseMovieInputs};
+        const userInputs = data.u;
+        const movieInputs = data.m;
+        const outputs = data.r;
+        const numUsers = Math.max(...userInputs) + 1; // Asumiendo que los IDs son consecutivos empezando desde 0
+        const numMovies = Math.max(...movieInputs) + 1; // Asumiendo que los IDs son consecutivos empezando desde 0
+        return { userInputs, movieInputs, outputs, numUsers, numMovies };
     };
 
     const trainProcessed = processData(trainData);
     const valProcessed = processData(valData);
 
+    const numUsers = Math.max(trainProcessed.numUsers, valProcessed.numUsers);
+    const numMovies = Math.max(trainProcessed.numMovies, valProcessed.numMovies);
+
     console_log(`#Usuarios: ${numUsers} #Peliculas: ${numMovies}`);
 
     let embeddingsPlotCreated = false;
     let lossPlotCreated = false;
-
+    
     // Función para habilitar o deshabilitar los botones durante el entrenamiento
     const toggleButtons = (isTraining) => {
         btnStart.disabled = isTraining;
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console_log("Iniciando entrenamiento...");
 
         trainWorker = new Worker('train-worker.js');
-
+        
         // Deshabilitar/habilitar botones
         toggleButtons(true);
 
@@ -136,8 +136,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Iniciar el entrenamiento del modelo en el Web Worker
         trainWorker.postMessage({ 
-            trainData: { u: trainProcessed.userInputs, b: trainProcessed.betterMovieInputs, w: trainProcessed.worseMovieInputs },
-            valData: { u: valProcessed.userInputs, b: valProcessed.betterMovieInputs, w: valProcessed.worseMovieInputs },
+            trainData: { u: trainProcessed.userInputs, m: trainProcessed.movieInputs, r: trainProcessed.outputs },
+            valData: { u: valProcessed.userInputs, m: valProcessed.movieInputs, r: valProcessed.outputs },
             numUsers, numMovies 
         });
     };
@@ -222,39 +222,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const layout = {
             margin: { t: 50, l: 50, r: 50, b: 50 },
-            xaxis: { title: 'Epoch' },
-            yaxis: { title: 'Loss' },
             legend: { x: 1, xanchor: 'right', y: 1 }
         };
-
+        
         const data = [trainTrace, valTrace];
         Plotly.newPlot('loss-plot', data, layout, { responsive: true });
     };
 
     const updateLossPlot = (lossHistory, valLossHistory) => {
-        const trainTrace = {
-            x: lossHistory.map((_, i) => i + 1),
-            y: lossHistory,
-            mode: 'lines+markers',
-            name: 'Train Loss',
-            line: { color: 'blue' }
-        };
-
-        const valTrace = {
-            x: valLossHistory.map((_, i) => i + 1),
-            y: valLossHistory,
-            mode: 'lines+markers',
-            name: 'Validation Loss',
-            line: { color: 'red' }
-        };
-
-        const layout = {
-            margin: { t: 50, l: 50, r: 50, b: 50 },
-            xaxis: { title: 'Epoch' },
-            yaxis: { title: 'Loss' },
-            legend: { x: 1, xanchor: 'right', y: 1 }
-        };
-
-        Plotly.react('loss-plot', [trainTrace, valTrace], layout, { responsive: true });
+        Plotly.restyle('loss-plot', 'x', [lossHistory.map((_, i) => i + 1), valLossHistory.map((_, i) => i + 1)]);
+        Plotly.restyle('loss-plot', 'y', [lossHistory, valLossHistory]);
     };
+
 });
