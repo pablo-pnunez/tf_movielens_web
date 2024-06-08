@@ -1,36 +1,73 @@
 document.addEventListener('DOMContentLoaded', async () => {
     let trainWorker;
-    let consola = document.getElementById('console');
 
-    // Función para la console
-    const console_log = (line) => {
-        consola.textContent = consola.textContent+"\n"+line;
-        consola.scrollTop = consola.scrollHeight;
-    };
-
-
+    // Obtener elementos de la interfaz
+    const consola = document.getElementById('console');
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
+    const progressBar = document.getElementsByClassName('progress-bar')[0];
+
+    // Funciones para la consola
+    let queue = [];
+    let isWriting = false;
+    const console_log = (line) => {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timestamp = `[${hours}:${minutes}:${seconds}] `;
+        const fullLine = "\n" + timestamp + line;
     
+        queue.push(fullLine);
+        processQueue();
+    };
+
+    const processQueue = () => {
+        if (isWriting || queue.length === 0) return;
+    
+        isWriting = true;
+        const line = queue.shift();
+        let index = 0;
+    
+        const writeCharacter = () => {
+            if (index < line.length) {
+                consola.textContent += line.charAt(index);
+                index++;
+                setTimeout(writeCharacter, 5); // Ajusta el tiempo para la velocidad de escritura
+            } else {
+                consola.scrollTop = consola.scrollHeight;
+                isWriting = false;
+                processQueue(); // Procesar la siguiente línea en la cola
+            }
+        };
+    
+        writeCharacter();
+    };
+
     // Comprobar si WebGL está disponible
     if (tf.ENV.get('WEBGL_VERSION') > 0) {
-        console.log('WebGL is enabled');
-    } else {
-        console.log('WebGL is not enabled');
-    }
+        console_log('WebGL is enabled');
 
-    const statusDiv = document.getElementById('status');
-    const progressBar = document.getElementsByClassName('progress-bar')[0]
+    } else {
+        console_log('WebGL is not enabled');
+    }
     
     // Cargar los datos de entrenamiento
     console_log("Cargando los datos de entrenamiento...");
-    const trainResponse = await fetch('ratings_train.json');
-    const trainRatings = await trainResponse.json();
-
-    // Cargar los datos de validación
-    console_log("Cargando los datos de validación...");
-    const valResponse = await fetch('ratings_val.json');
-    const valRatings = await valResponse.json();
+    let trainData, valData;
+    try {
+        const trainResponse = await fetch('data/regression/ratings_train.json');
+        trainData = await trainResponse.json();
+        console_log("Datos de entrenamiento cargados.");
+        
+        console_log("Cargando los datos de validación...");
+        const valResponse = await fetch('data/regression/ratings_val.json');
+        valData = await valResponse.json();
+        console_log("Datos de validación cargados.");
+    } catch (error) {
+        console_log(`Error al cargar los datos: ${error}`);
+        return;
+    }
 
     // Habilitar los botones una vez que los datos se han cargado
     btnStart.disabled = false;
@@ -38,42 +75,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Preparar los datos de entrenamiento
     console_log("Preprocesando datos...");
 
-    const trainUserIds = [...new Set(trainRatings.map(r => r.userId))];
-    const trainMovieIds = [...new Set(trainRatings.map(r => r.movieId))];
+    const processData = (data) => {
+        const userInputs = data.u;
+        const movieInputs = data.m;
+        const outputs = data.r;
+        const numUsers = Math.max(...userInputs) + 1; // Asumiendo que los IDs son consecutivos empezando desde 0
+        const numMovies = Math.max(...movieInputs) + 1; // Asumiendo que los IDs son consecutivos empezando desde 0
+        return { userInputs, movieInputs, outputs, numUsers, numMovies };
+    };
 
-    const trainUserIdToIndex = Object.fromEntries(trainUserIds.map((id, index) => [id, index]));
-    const trainMovieIdToIndex = Object.fromEntries(trainMovieIds.map((id, index) => [id, index]));
+    const trainProcessed = processData(trainData);
+    const valProcessed = processData(valData);
 
-    const trainUserInputs = trainRatings.map(r => trainUserIdToIndex[r.userId]);
-    const trainMovieInputs = trainRatings.map(r => trainMovieIdToIndex[r.movieId]);
-    const trainOutputs = trainRatings.map(r => r.rating);
+    const numUsers = Math.max(trainProcessed.numUsers, valProcessed.numUsers);
+    const numMovies = Math.max(trainProcessed.numMovies, valProcessed.numMovies);
 
-    // Preparar los datos de validación
-    const valUserIds = [...new Set(valRatings.map(r => r.userId))];
-    const valMovieIds = [...new Set(valRatings.map(r => r.movieId))];
-
-    const valUserIdToIndex = Object.fromEntries(valUserIds.map((id, index) => [id, index]));
-    const valMovieIdToIndex = Object.fromEntries(valMovieIds.map((id, index) => [id, index]));
-
-    const valUserInputs = valRatings.map(r => valUserIdToIndex[r.userId]);
-    const valMovieInputs = valRatings.map(r => valMovieIdToIndex[r.movieId]);
-    const valOutputs = valRatings.map(r => r.rating);
-
-    const numUsers = Math.max(trainUserIds.length, valUserIds.length);
-    const numMovies = Math.max(trainMovieIds.length, valMovieIds.length);
+    console_log(`#Usuarios: ${numUsers} #Peliculas: ${numMovies}`);
 
     let embeddingsPlotCreated = false;
     let lossPlotCreated = false;
     
+    // Función para habilitar o deshabilitar los botones durante el entrenamiento
+    const toggleButtons = (isTraining) => {
+        btnStart.disabled = isTraining;
+        btnStop.disabled = !isTraining;
+    };
+
     // Función para iniciar el entrenamiento del modelo en el Web Worker
     const startTraining = () => {
         console_log("Iniciando entrenamiento...");
 
         trainWorker = new Worker('train-worker.js');
         
-        // Deshabilitar btn-start y habilitar btn-stop
-        btnStart.disabled = true;
-        btnStop.disabled = false;
+        // Deshabilitar/habilitar botones
+        toggleButtons(true);
 
         // Escuchar los mensajes del Web Worker para el entrenamiento
         trainWorker.addEventListener('message', (event) => {
@@ -101,8 +136,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Iniciar el entrenamiento del modelo en el Web Worker
         trainWorker.postMessage({ 
-            trainUserInputs, trainMovieInputs, trainOutputs, 
-            valUserInputs, valMovieInputs, valOutputs, 
+            trainData: { u: trainProcessed.userInputs, m: trainProcessed.movieInputs, r: trainProcessed.outputs },
+            valData: { u: valProcessed.userInputs, m: valProcessed.movieInputs, r: valProcessed.outputs },
             numUsers, numMovies 
         });
     };
@@ -113,14 +148,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (trainWorker) {
             trainWorker.terminate();
-            statusDiv.textContent = 'Training stopped';
             progressBar.value = 0;
             progressBar.style.width = '0%';
             trainWorker = null;
 
             // Habilitar btn-start y deshabilitar btn-stop
-            btnStart.disabled = false;
-            btnStop.disabled = true;
+            toggleButtons(false);
         }
     };
 
@@ -152,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         const data = [userTrace, movieTrace];
-        var layout = {
+        const layout = {
             margin: { t: 50, l: 50, r: 50, b: 50 },
             legend: { x: 1, xanchor: 'right', y: 1 }
         };
@@ -187,7 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             line: { color: 'red' }
         };
 
-        var layout = {
+        const layout = {
             margin: { t: 50, l: 50, r: 50, b: 50 },
             legend: { x: 1, xanchor: 'right', y: 1 }
         };

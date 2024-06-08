@@ -1,13 +1,25 @@
 import pandas as pd
 import json
 
-# Cargar los datos de MovieLens
-ratings = pd.read_csv('ml-latest-small/ratings.csv').drop(columns=["timestamp"]).sample(frac=.1)
 
+def pandas_to_json(data, filename):
+    # Convertir a JSON
+    ratings_json = data.to_dict(orient="list")
+    # Guardar en un archivo JSON
+    with open(f'{filename}.json', 'w') as f:
+        json.dump(ratings_json, f)
+    
+# Para regresión
+# ratings = pd.read_csv('ml-latest-small/ratings.csv').drop(columns=["timestamp"])
+# ratings = ratings.rename(columns={"movieId":"m", "userId":"u", "rating":"r"}).sample(frac=.1)
+# pandas_to_json(ratings, "data/regression/ratings_train")
 
-# Convertir a JSON
-ratings_json = ratings.to_json(orient='records')
+# Para ranking
+train_ranking = pd.read_csv('data/ranking/pj_train.csv', header=None, names=["u", "b", "w"])
+pandas_to_json(train_ranking, "data/ranking/train")
 
-# Guardar en un archivo JSON
-with open('ratings.json', 'w') as f:
-    f.write(ratings_json)
+test_ranking = pd.read_csv('data/ranking/pj_test.csv', header=None, names=["u", "b", "w"])
+pandas_to_json(test_ranking, "data/ranking/test")
+
+movies = pd.read_csv('data/ranking/movies.csv')
+pandas_to_json(movies, "data/ranking/movies")

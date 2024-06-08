@@ -1,17 +1,16 @@
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.12.0/dist/tf.min.js');
 
-async function trainModel(trainUserInputs, trainMovieInputs, trainOutputs, valUserInputs, valMovieInputs, valOutputs, numUsers, numMovies, statusCallback, progressBarCallback) {
-    
+async function trainModel(trainData, valData, numUsers, numMovies, statusCallback, progressBarCallback) {
     // Preparar los datos de entrenamiento
-    const trainUserTensor = tf.tensor2d(trainUserInputs, [trainUserInputs.length, 1]);
-    const trainMovieTensor = tf.tensor2d(trainMovieInputs, [trainMovieInputs.length, 1]);
-    const trainRatingsTensor = tf.tensor1d(trainOutputs);
+    const trainUserTensor = tf.tensor2d(trainData.u, [trainData.u.length, 1]);
+    const trainMovieTensor = tf.tensor2d(trainData.m, [trainData.m.length, 1]);
+    const trainRatingsTensor = tf.tensor1d(trainData.r);
 
     // Preparar los datos de validación
-    const valUserTensor = tf.tensor2d(valUserInputs, [valUserInputs.length, 1]);
-    const valMovieTensor = tf.tensor2d(valMovieInputs, [valMovieInputs.length, 1]);
-    const valRatingsTensor = tf.tensor1d(valOutputs);
-    
+    const valUserTensor = tf.tensor2d(valData.u, [valData.u.length, 1]);
+    const valMovieTensor = tf.tensor2d(valData.m, [valData.m.length, 1]);
+    const valRatingsTensor = tf.tensor1d(valData.r);
+
     // Crear el modelo de factorización de matrices
     const userInput = tf.input({ shape: [1], name: 'userInput' });
     const movieInput = tf.input({ shape: [1], name: 'movieInput' });
@@ -53,7 +52,7 @@ async function trainModel(trainUserInputs, trainMovieInputs, trainOutputs, valUs
     // Entrenar el modelo
     const epochs = 100;
     const batchSize = 128;
-    const totalBatches = Math.ceil(trainUserInputs.length / batchSize) * epochs;
+    const totalBatches = Math.ceil(trainData.u.length / batchSize) * epochs;
 
     let batchCount = 0;
     let epochCount = 0;
@@ -83,8 +82,7 @@ async function trainModel(trainUserInputs, trainMovieInputs, trainOutputs, valUs
                 const movieEmbeddings = await movieEmbeddingLayer.getWeights()[0].array();
                 self.postMessage({ type: 'plot', lossHistory, valLossHistory, userEmbeddings, movieEmbeddings });
 
-                statusCallback(`[Epoch ${epochCount}] Train_loss: ${last_loss}, Val_loss: ${last_val_loss}`);
-
+                statusCallback(`(Epoch ${epochCount}) Train_loss: ${last_loss}, Val_loss: ${last_val_loss}`);
             },
             onTrainEnd: () => {
                 statusCallback('Entrenamiento completado!');
@@ -95,8 +93,8 @@ async function trainModel(trainUserInputs, trainMovieInputs, trainOutputs, valUs
 }
 
 self.addEventListener('message', async (event) => {
-    const { trainUserInputs, trainMovieInputs, trainOutputs, valUserInputs, valMovieInputs, valOutputs, numUsers, numMovies } = event.data;
-    await trainModel(trainUserInputs, trainMovieInputs, trainOutputs, valUserInputs, valMovieInputs, valOutputs, numUsers, numMovies, (status) => {
+    const { trainData, valData, numUsers, numMovies } = event.data;
+    await trainModel(trainData, valData, numUsers, numMovies, (status) => {
         self.postMessage({ type: 'status', status });
     }, (progress) => {
         self.postMessage({ type: 'progress', progress });
