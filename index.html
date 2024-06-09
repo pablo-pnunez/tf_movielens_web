@@ -30,76 +30,49 @@
                     </div>
                     <div class="d-grid gap-2 col-10 mt-3 mb-3 mx-auto">
                         <div class="form-check mr-3 ml-3">
-                            <input class="form-check-input" type="checkbox" value="" id="random-seed" checked>
-                            <label class="form-check-label" for="flexCheckChecked">
-                                Semilla aleatoria
-                            </label>
+                            <input id="random-seed" class="form-check-input" type="checkbox" value=""  checked>
+                            <label class="form-check-label" for="flexCheckChecked"> Semilla aleatoria </label>
                         </div>
                         <div class="input-group">
-                            <span class="input-group-text" id="emb-size" data-bs-toggle="tooltip"
-                                data-bs-title="Tamaño embedding">K</span>
-                            <input type="number" class="form-control" value="5" max="10" min="2">
+                            <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Tamaño embedding">K</span>
+                            <input id="emb-size" type="number" class="form-control" value="5" max="10" min="2">
                         </div>
 
                         <div class="input-group">
-                            <span class="input-group-text" id="regularizer" data-bs-toggle="tooltip"
-                                data-bs-title="Regularizador">μ</span>
-                            <input type="number" class="form-control" value="0.01" max="0.1" min="0.0001" step="0.0001">
+                            <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Regularizador">μ</span>
+                            <input id="regularizer" type="number" class="form-control" value="0.01" max="0.1" min="0.0001" step="0.0001">
                         </div>
 
                         <hr class="">
 
                         <div class="input-group">
-                            <span class="input-group-text" id="n-epochs" data-bs-toggle="tooltip"
-                                data-bs-title="Número de epochs">Epochs</span>
-                            <input type="number" class="form-control" value="100" max="1000" min="1" step="1">
+                            <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Número de epochs">Epochs</span>
+                            <input id="n-epochs" type="number" class="form-control" value="100" max="1000" min="1" step="1">
                         </div>
 
                         <div class="input-group">
-                            <span class="input-group-text" id="batch-size" data-bs-toggle="tooltip"
-                                data-bs-title="Tamaño del batch">Batch</span>
-                            <input type="number" class="form-control" value="32" max="1024" min="8" step="8">
+                            <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Tamaño del batch">Batch</span>
+                            <input id="batch-size" type="number" class="form-control" value="32" max="1024" min="8" step="8">
                         </div>
 
                         <div class="input-group">
-                            <span class="input-group-text" id="learning-rate" data-bs-toggle="tooltip"
-                                data-bs-title="Learning rate">L-Rate</span>
-                            <input type="number" class="form-control" value="0.01" max="0.1" min="0.0001" step="0.0001">
+                            <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Learning rate">α</span>
+                            <input id="learning-rate" type="number" class="form-control" value="0.01" max="0.1" min="0.0001" step="0.0001">
                         </div>
-
 
                         <hr class="">
 
                         <div class="btn-group" role="group" aria-label="Basic mixed styles example">
-                            <button id="btn-stop" type="button" class="btn btn-danger" disabled><i
-                                    class="bi bi-stop-fill m-2"></i></button>
-                            <button id="btn-start" type="button" class="btn btn-success" disabled><i
-                                    class="bi bi-play-fill m-2"></i></button>
+                            <button id="btn-stop" type="button" class="btn btn-danger" disabled><i class="bi bi-stop-fill m-2"></i></button>
+                            <button id="btn-start" type="button" class="btn btn-success" disabled><i class="bi bi-play-fill m-2"></i></button>
                         </div>
-                        <button type="button" class="btn btn-secondary" disabled><i
-                                class="bi bi-arrow-clockwise m-2"></i></button>
-                        <hr class="">
-                        <button type="button" class="btn btn-warning" disabled><i class="bi bi-trash3 m-2"></i>Borrar
-                            puntos</button>
+                        <button id="btn-reset" type="button" class="btn btn-secondary" disabled><i class="bi bi-arrow-clockwise m-2"></i></button>
                     </div>
                 </div>
 
 
             </div>
             <div class="col-xl-10 col-lg-9 col-md-8 col-sm-12">
-
-                <div class="col-sm-12 mt-3">
-                    <div class="card ">
-                        <div class="card-header">
-                            Consola
-                        </div>
-                        <textarea id="console" class=" mt-2" style="width: 100%; min-height:60px; overflow:hidden"></textarea>
-                        <div class="progress m-2">
-                            <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-
-                </div>
 
 
                 <div class="row">
@@ -128,16 +101,62 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="col-sm-12 mt-3">
+                    <div class="card ">
+                        <div class="card-header">
+                            Consola
+                        </div>
+                        <textarea id="console" class=" mt-2"
+                            style="width: 100%; min-height:60px; overflow:hidden"></textarea>
+                        <div class="progress mx-2 mb-1 mt-2">
+                            <div id="batch-pgb" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="progress mx-2 mb-2">
+                            <div id="epoch-pgb" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                </div>
+
                 <div class="row">
                     <div class="col-12 mt-3">
-                        <div class="ratio ratio-16x9">
-                            <div class="card ">
+                            <div class="card">
                                 <div class="card-header">
-                                    Puntuaciones
+                                    Usuario nuevo
                                 </div>
-                                Level 2: .col-8 .col-sm-6
+                                <div class="row">
+                                    <div class="col-sm-6 col-lg-4 col-xl-3 my-3">
+                                        <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+                                            <button id="btn-usr-load" type="button" class="btn btn-outline-primary"><i class="bi bi-cloud-upload m-2"></i></button>
+                                            <button id="btn-usr-save" type="button" class="btn btn-outline-primary"><i class="bi bi-download m-2"></i></button>
+                                        </div>
+                                        <button id="btn-usr-clean" type="button" class="btn btn-outline-danger"><i class="bi bi-trash3 m-2"></i></button>
+
+                                    </div>
+                                </div>
+                
+                                <div class="row">
+                                    <div class="col mx-3 mb-3">
+                                        <div class="table-container">
+                                            <table class="table mt-3 table-striped align-middle">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">#</th>
+                                                        <th scope="col">Puntuación</th>
+                                                        <th scope="col">Película</th>
+                                                        <th scope="col">Predicción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="new-user-table">
+                                                    <!-- Filas de películas se añadirán aquí -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                
                             </div>
-                        </div>
                     </div>
                 </div>
 
@@ -150,15 +169,10 @@
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.12.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="script.js" defer></script>
-
-    <script>
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-    </script>
 
 </body>
 

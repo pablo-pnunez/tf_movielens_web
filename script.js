@@ -1,11 +1,25 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // Poner los tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    
     let trainWorker;
 
     // Obtener elementos de la interfaz
     const consola = document.getElementById('console');
+    const epoch_progressBar = document.getElementById('epoch-pgb');
+    const batch_progressBar = document.getElementById('batch-pgb');
+
+    const randomSeed = document.getElementById('random-seed');
+    const embSize = document.getElementById('emb-size');
+    const regularizer = document.getElementById('regularizer');
+    const nEpochs = document.getElementById('n-epochs');
+    const batchSize = document.getElementById('batch-size');
+    const learningRate = document.getElementById('learning-rate');
+
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
-    const progressBar = document.getElementsByClassName('progress-bar')[0];
+    const btnReset = document.getElementById('btn-reset');
 
     // Funciones para la consola
     let queue = [];
@@ -33,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (index < line.length) {
                 consola.textContent += line.charAt(index);
                 index++;
-                setTimeout(writeCharacter, 5); // Ajusta el tiempo para la velocidad de escritura
+                setTimeout(writeCharacter, 1); // Ajusta el tiempo para la velocidad de escritura
             } else {
                 consola.scrollTop = consola.scrollHeight;
                 isWriting = false;
@@ -44,6 +58,50 @@ document.addEventListener('DOMContentLoaded', async () => {
         writeCharacter();
     };
 
+    // Función para añadir las puntuaciones de un nuevo usuario
+    const addMoviesToTable = (movies) => {
+        const tableBody = document.getElementById('new-user-table');
+        tableBody.innerHTML = ''; // Limpiar la tabla antes de añadir nuevas filas
+
+        movies.Title.forEach((title, index) => {
+            const row = document.createElement('tr');
+    
+            const cellIndex = document.createElement('td');
+            cellIndex.scope = 'row';
+            cellIndex.textContent = index + 1;
+    
+            const cellScore = document.createElement('td');
+            const scoreSelect = document.createElement('select');
+            scoreSelect.className = 'form-select';
+
+            const option = document.createElement('option');
+            option.value = 0;
+            option.textContent = "Nulo";
+            scoreSelect.appendChild(option);
+            for (let i = 1; i <= 5; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                scoreSelect.appendChild(option);
+            }
+            cellScore.appendChild(scoreSelect);
+    
+            const cellTitle = document.createElement('td');
+            cellTitle.textContent = title;
+    
+            const cellPrediction = document.createElement('td');
+            cellPrediction.textContent = 'N/D';
+    
+            row.appendChild(cellIndex);
+            row.appendChild(cellScore);
+            row.appendChild(cellTitle);
+            row.appendChild(cellPrediction);
+    
+            tableBody.appendChild(row);
+        });
+    };
+
+
     // Comprobar si WebGL está disponible
     if (tf.ENV.get('WEBGL_VERSION') > 0) {
         console_log('WebGL is enabled');
@@ -53,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Cargar los datos de entrenamiento
     console_log("Cargando los datos de entrenamiento...");
-    let trainData, valData, numUsers, numMovies;
+    let trainData, valData, numUsers, numMovies, movies;
     try {
         const trainResponse = await fetch('data/ranking/train.json');
         trainData = await trainResponse.json();
@@ -63,8 +121,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         valData = await valResponse.json();
 
         console_log("Cargando información del dataset...");
-        const infRoesponse = await fetch('data/ranking/info.json');
-        infoData = await infRoesponse.json();
+
+        const movieResponse = await fetch('data/ranking/movies.json');
+        movies = await movieResponse.json();
+
+        const infoResponse = await fetch('data/ranking/info.json');
+        infoData = await infoResponse.json();
         numUsers = infoData.numUsers[0];
         numMovies = infoData.numItems[0];
         console_log("Datos cargados.");
@@ -76,6 +138,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Habilitar los botones una vez que los datos se han cargado
     btnStart.disabled = false;
+
+    // Rellenar la tabla
+    addMoviesToTable(movies);
 
     // Preparar los datos de entrenamiento
     console_log("Preprocesando datos...");
@@ -99,6 +164,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const toggleButtons = (isTraining) => {
         btnStart.disabled = isTraining;
         btnStop.disabled = !isTraining;
+        btnReset.disabled = isTraining;
+
+        randomSeed.disabled = isTraining;
+        embSize.disabled = isTraining;
+        regularizer.disabled = isTraining;
+        nEpochs.disabled = isTraining;
+        batchSize.disabled = isTraining;
+        learningRate.disabled = isTraining;
     };
 
     // Función para iniciar el entrenamiento del modelo en el Web Worker
@@ -112,12 +185,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Escuchar los mensajes del Web Worker para el entrenamiento
         trainWorker.addEventListener('message', (event) => {
-            const { type, status, progress, lossHistory, valLossHistory, userEmbeddings, movieEmbeddings } = event.data;
+            const { type, status, batchCount, totalBatches, epochs, lossHistory, valLossHistory, userEmbeddings, movieEmbeddings } = event.data;
             if (type === 'status') {
                 console_log(status);
             } else if (type === 'progress') {
-                progressBar.value = progress;
-                progressBar.style.width = `${progress}%`;
+                const train_progress = (batchCount / totalBatches) * 100;
+                const batches_epoch = (totalBatches / epochs)
+                const epoch_progress = ((batchCount % batches_epoch) / batches_epoch) * 100;
+
+                epoch_progressBar.value = train_progress;
+                epoch_progressBar.style.width = `${train_progress}%`;
+
+                batch_progressBar.value = epoch_progress;
+                batch_progressBar.style.width = `${epoch_progress}%`;
+
             } else if (type === 'plot') {
                 if (!embeddingsPlotCreated) {
                     createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies);
@@ -148,8 +229,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (trainWorker) {
             trainWorker.terminate();
-            progressBar.value = 0;
-            progressBar.style.width = '0%';
+            batch_progressBar.value = 0;
+            batch_progressBar.style.width = '0%';
+
+            epoch_progressBar.value = 0;
+            epoch_progressBar.style.width = '0%';
+
             trainWorker = null;
 
             // Habilitar btn-start y deshabilitar btn-stop
@@ -172,22 +257,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             mode: 'markers',
             type: 'scatter',
             name: 'Users',
-            marker: { color: 'blue' }
+            marker: { color: '#03a9f4' }
         };
 
         const movieTrace = {
             x: movieCoords.map(coord => coord[0]),
             y: movieCoords.map(coord => coord[1]),
+            text: movies.Title, 
+            hoverinfo: 'text',
             mode: 'markers',
             type: 'scatter',
             name: 'Movies',
-            marker: { color: 'red' }
+            marker: { color: '#f44336' }
         };
 
         const data = [userTrace, movieTrace];
+        
         const layout = {
             margin: { t: 50, l: 50, r: 50, b: 50 },
-            legend: { x: 1, xanchor: 'right', y: 1 }
+            legend: { x: 1, xanchor: 'right', y: 1 },
+            xaxis: { title: 'X' },
+            yaxis: { title: 'Y' },
         };
 
         Plotly.newPlot('emb-plot', data, layout, { responsive: true });
@@ -208,7 +298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             type: 'scatter',
             mode: 'lines+markers',
             name: 'Train Loss',
-            line: { color: 'blue' }
+            line: { color: '#9e9e9e' }
         };
 
         const valTrace = {
@@ -217,7 +307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             type: 'scatter',
             mode: 'lines+markers',
             name: 'Validation Loss',
-            line: { color: 'red' }
+            line: { color: '#4caf50' }
         };
 
         const layout = {
@@ -237,7 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             y: lossHistory,
             mode: 'lines+markers',
             name: 'Train Loss',
-            line: { color: 'blue' }
+            line: { color: '#9e9e9e' }
         };
 
         const valTrace = {
@@ -245,7 +335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             y: valLossHistory,
             mode: 'lines+markers',
             name: 'Validation Loss',
-            line: { color: 'red' }
+            line: { color: '#4caf50' }
         };
 
         const layout = {

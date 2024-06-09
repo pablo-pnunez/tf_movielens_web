@@ -1,6 +1,5 @@
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js');
 
-
 async function trainModel(trainData, valData, numUsers, numMovies, statusCallback, progressBarCallback) {
     // Preparar los datos de entrenamiento
     const trainUserTensor = tf.tensor2d(trainData.u, [trainData.u.length, 1]);
@@ -33,14 +32,15 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
     const betterMovieVector = tf.layers.flatten().apply(betterMovieEmbedding);
     const worseMovieVector = tf.layers.flatten().apply(worseMovieEmbedding);
 
-    // Calcular el producto escalar
-    const betterDotProduct = tf.layers.dot({ axes: -1 }).apply([userVector, betterMovieVector]);
-    const worseDotProduct = tf.layers.dot({ axes: -1 }).apply([userVector, worseMovieVector]);
+    // Añadir capas de Dropout
+    const dropoutRate = 0.1; // Puedes ajustar esta tasa según sea necesario
+    const userVectorWithDropout = tf.layers.dropout({ rate: dropoutRate }).apply(userVector);
+    const betterMovieVectorWithDropout = tf.layers.dropout({ rate: dropoutRate }).apply(betterMovieVector);
+    const worseMovieVectorWithDropout = tf.layers.dropout({ rate: dropoutRate }).apply(worseMovieVector);
 
-    // Crear la función de margen
-    // const margin = tf.scalar(1.0);
-    // const diff = tf.layers.subtract().apply([betterDotProduct, worseDotProduct]);
-    // const marginLoss = tf.layers.add().apply([tf.layers.maximum().apply([tf.layers.subtract().apply([margin, diff]), tf.scalar(0)])]);
+    // Calcular el producto escalar
+    const betterDotProduct = tf.layers.dot({ axes: -1 }).apply([userVectorWithDropout, betterMovieVectorWithDropout]);
+    const worseDotProduct = tf.layers.dot({ axes: -1 }).apply([userVectorWithDropout, worseMovieVectorWithDropout]);
 
     // Simulación de la resta y cálculo del margen
     const minus_worse = tf.layers.multiply().apply([worseDotProduct, minusOneInput]);
@@ -53,13 +53,13 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
     });
 
     model.compile({
-        optimizer: tf.train.adam(0.0005),
+        optimizer: tf.train.adam(0.0001),
         loss: 'meanSquaredError'
     });
 
     // Entrenar el modelo
-    const epochs = 10;
-    const batchSize = 1024;
+    const epochs = 100;
+    const batchSize = 256;
     const totalBatches = Math.ceil(trainData.u.length / batchSize) * epochs;
 
     let batchCount = 0;
@@ -78,7 +78,6 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
     const valZeroTensor = tf.zeros([valData.u.length, 1]);
     const valMarginTensor = tf.fill([valData.u.length, 1], 1.0); // Margen de 1.0
 
-
     await model.fit([trainUserTensor, trainBetterMovieTensor, trainWorseMovieTensor, trainMinusOneTensor, trainZeroTensor, trainMarginTensor], tf.zeros([trainData.u.length]), {
         epochs: epochs,
         batchSize: batchSize,
@@ -86,8 +85,9 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
         callbacks: {
             onBatchEnd: async (batch, logs) => {
                 batchCount++;
-                const progress = (batchCount / totalBatches) * 100;
-                progressBarCallback(progress);
+                //const progress = (batchCount / totalBatches) * 100;
+                //progressBarCallback(progress);
+                progressBarCallback(batchCount, totalBatches, epochs);
                 if (last_loss == null) { last_loss = logs.loss.toFixed(4); }
             },
             onEpochEnd: async (epoch, logs) => { 
@@ -96,15 +96,19 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
                 last_val_loss = logs.val_loss.toFixed(4);
                 lossHistory.push(last_loss);
                 valLossHistory.push(last_val_loss);
-                const userEmbeddings = await userEmbeddingLayer.getWeights()[0].array();
-                const movieEmbeddings = await movieEmbeddingLayer.getWeights()[0].array();
+
+                // Obtener los embeddings y considerar solo los dos primeros elementos para el gráfico
+                const userEmbeddings = (await userEmbeddingLayer.getWeights()[0].array()).map(embedding => embedding.slice(0, 2));
+                const movieEmbeddings = (await movieEmbeddingLayer.getWeights()[0].array()).map(embedding => embedding.slice(0, 2));
+
                 self.postMessage({ type: 'plot', lossHistory, valLossHistory, userEmbeddings, movieEmbeddings });
 
                 statusCallback(`(Epoch ${epochCount}) Train_loss: ${last_loss}, Val_loss: ${last_val_loss}`);
             },
             onTrainEnd: () => {
                 statusCallback('Entrenamiento completado!');
-                progressBarCallback(100);
+                progressBarCallback(totalBatches, totalBatches, epochs);
+                //progressBarCallback(100);
             }
         }
     });
@@ -114,7 +118,8 @@ self.addEventListener('message', async (event) => {
     const { trainData, valData, numUsers, numMovies } = event.data;
     await trainModel(trainData, valData, numUsers, numMovies, (status) => {
         self.postMessage({ type: 'status', status });
-    }, (progress) => {
-        self.postMessage({ type: 'progress', progress });
+    }, (batchCount, totalBatches, epochs) => {
+        self.postMessage({ type: 'progress', batchCount, totalBatches, epochs});
+        //self.postMessage({ type: 'progress', progress });
     });
 });

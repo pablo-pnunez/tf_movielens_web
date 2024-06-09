@@ -23,3 +23,59 @@ span.input-group-text {
 .progress{
     border-radius: 3px;
 }
+
+#emb-plot{
+    background-image: url(img/placeholder3.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position-y: center;
+}
+
+#loss-plot{
+    background-image: url(img/placeholder2.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position-y: center;
+}
+
+.btn:disabled{
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.form-control:disabled{
+    color: #adadad;
+    background-color:white;
+    cursor: not-allowed;
+}
+
+.table-container {
+    max-height: 400px; /* Ajusta esta altura según tus necesidades */
+    overflow-y: auto;
+    border-radius: 5px;
+    border: 1px solid #babbbb
+}
+
+.table-container table {
+    width: 100%;
+    /*border-collapse: collapse;*/
+    margin: 0px !important;
+    border-collapse: separate;
+
+}
+
+.table-container thead {
+    background-color: #e7e7e7; /* Opcional: color de fondo para los encabezados */
+    position: sticky;
+    top: -1px;
+    z-index: 1;
+    border:1px solid #212121;
+}
+
+.table-container::-webkit-scrollbar {
+    display: none;
+ }
+  
+ #batch-pgb{
+    transition: none;
+ }
