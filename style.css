@@ -24,15 +24,8 @@ span.input-group-text {
     border-radius: 3px;
 }
 
-#emb-plot{
-    background-image: url(img/placeholder3.svg);
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position-y: center;
-}
-
-#loss-plot{
-    background-image: url(img/placeholder2.svg);
+#emb-plot, #loss-plot{
+    background-image: url(img/placeholder1.svg);
     background-repeat: no-repeat;
     background-size: contain;
     background-position-y: center;

@@ -59,10 +59,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // Función para añadir las puntuaciones de un nuevo usuario
-    const addMoviesToTable = (movies) => {
+    const addMoviesToTable = (movies, userData) => {
         const tableBody = document.getElementById('new-user-table');
         tableBody.innerHTML = ''; // Limpiar la tabla antes de añadir nuevas filas
-
+    
         movies.Title.forEach((title, index) => {
             const row = document.createElement('tr');
     
@@ -73,17 +73,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             const cellScore = document.createElement('td');
             const scoreSelect = document.createElement('select');
             scoreSelect.className = 'form-select';
-
-            const option = document.createElement('option');
-            option.value = 0;
-            option.textContent = "Nulo";
-            scoreSelect.appendChild(option);
-            for (let i = 1; i <= 5; i++) {
+    
+            const optionNulo = document.createElement('option');
+            optionNulo.value = 0;
+            optionNulo.textContent = "Nulo";
+            scoreSelect.appendChild(optionNulo);
+    
+            for (let i = 1; i <= 10; i++) {
                 const option = document.createElement('option');
                 option.value = i;
                 option.textContent = i;
                 scoreSelect.appendChild(option);
             }
+    
+            // Buscar la puntuación del usuario para esta película
+            const movieIndex = userData.movie.indexOf(index);
+            if (movieIndex !== -1) {
+                scoreSelect.value = userData.score[movieIndex];
+            }
+    
             cellScore.appendChild(scoreSelect);
     
             const cellTitle = document.createElement('td');
@@ -99,8 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
             tableBody.appendChild(row);
         });
-    };
-
+    };    
 
     // Comprobar si WebGL está disponible
     if (tf.ENV.get('WEBGL_VERSION') > 0) {
@@ -111,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Cargar los datos de entrenamiento
     console_log("Cargando los datos de entrenamiento...");
-    let trainData, valData, numUsers, numMovies, movies;
+    let trainData, valData, numUsers, numMovies, movies, userData;
     try {
         const trainResponse = await fetch('data/ranking/train.json');
         trainData = await trainResponse.json();
@@ -129,6 +136,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         infoData = await infoResponse.json();
         numUsers = infoData.numUsers[0];
         numMovies = infoData.numItems[0];
+
+        const userResponse = await fetch('data/ranking/user.json');
+        userData = await userResponse.json();
+
         console_log("Datos cargados.");
 
     } catch (error) {
@@ -140,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnStart.disabled = false;
 
     // Rellenar la tabla
-    addMoviesToTable(movies);
+    addMoviesToTable(movies, userData);
 
     // Preparar los datos de entrenamiento
     console_log("Preprocesando datos...");

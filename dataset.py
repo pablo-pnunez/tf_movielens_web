@@ -23,6 +23,9 @@ test_ranking = pd.read_csv('data/ranking/pj_test.csv', header=None, names=["u", 
 test_ranking = test_ranking -1 # Adaptamos los IDS
 pandas_to_json(test_ranking, "data/ranking/test")
 
+user_ranking = pd.read_csv('data/ranking/puntuaciones_usuario.csv')
+pandas_to_json(user_ranking, "data/ranking/user")
+
 movies = pd.read_csv('data/ranking/movies.csv')
 movies["ID"] = movies["ID"] -1 # Adaptamos los IDS
 pandas_to_json(movies, "data/ranking/movies")
