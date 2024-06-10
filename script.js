@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Función para añadir las puntuaciones de un nuevo usuario
     const addMoviesToTable = (movies, userData) => {
-        const tableBody = document.getElementById('new-user-table');
+        const tableBody = document.getElementById('new-user-table-content');
         tableBody.innerHTML = ''; // Limpiar la tabla antes de añadir nuevas filas
     
         movies.Title.forEach((title, index) => {
@@ -107,11 +107,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     
             tableBody.appendChild(row);
         });
+
+        $('#new-user-table').DataTable({
+            // Agrega opciones personalizadas aquí
+            "order": [[ 0, "asc" ]] // Ordena por la primera columna de forma ascendente al cargar
+        });
     };    
 
     // Función para recuperar las valoraciones del usuario de la tabla y crear preferencias
     const addUserRatingsToTrainingData = () => {
-        const tableBody = document.getElementById('new-user-table');
+        const tableBody = document.getElementById('new-user-table-content');
         const rows = tableBody.getElementsByTagName('tr');
         let ratings = [];  // formato [(pelicula, valoración), ... ]
     
@@ -174,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Función para actualizar las predicciones en la tabla
     const updatePredictions = (predictions) => {
-        const tableBody = document.getElementById('new-user-table');
+        const tableBody = document.getElementById('new-user-table-content');
         const rows = tableBody.getElementsByTagName('tr');
 
         predictions.forEach((pred, index) => {

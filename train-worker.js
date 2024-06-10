@@ -21,8 +21,8 @@ async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex,
     const minusOneInput = tf.input({ shape: [1], name: 'minusOne' });
     const marginInput = tf.input({ shape: [1], name: 'margin' });
 
-    const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: 2, inputLength: 1, embeddingsConstraint: tf.constraints.nonNeg() });
-    const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: 2, inputLength: 1, embeddingsConstraint: tf.constraints.nonNeg() });
+    const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: 2, inputLength: 1});
+    const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: 2, inputLength: 1 });
 
     const userEmbedding = userEmbeddingLayer.apply(userInput);
     const betterMovieEmbedding = movieEmbeddingLayer.apply(betterMovieInput);
