@@ -1,6 +1,6 @@
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js');
 
-async function trainModel(trainData, valData, numUsers, numMovies, statusCallback, progressBarCallback) {
+async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex, statusCallback, progressBarCallback) {
     // Preparar los datos de entrenamiento
     const trainUserTensor = tf.tensor2d(trainData.u, [trainData.u.length, 1]);
     const trainBetterMovieTensor = tf.tensor2d(trainData.b, [trainData.b.length, 1]);
@@ -21,8 +21,8 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
     const minusOneInput = tf.input({ shape: [1], name: 'minusOne' });
     const marginInput = tf.input({ shape: [1], name: 'margin' });
 
-    const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: 2, inputLength: 1 });
-    const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: 2, inputLength: 1 });
+    const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: 2, inputLength: 1, embeddingsConstraint: tf.constraints.nonNeg() });
+    const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: 2, inputLength: 1, embeddingsConstraint: tf.constraints.nonNeg() });
 
     const userEmbedding = userEmbeddingLayer.apply(userInput);
     const betterMovieEmbedding = movieEmbeddingLayer.apply(betterMovieInput);
@@ -47,7 +47,7 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
     const margin_diff = tf.layers.add().apply([marginInput, minus_worse, betterDotProduct]);
     const marginLoss = tf.layers.maximum().apply([margin_diff, zeroInput]);
 
-    const model = tf.model({
+    let model = tf.model({
         inputs: [userInput, betterMovieInput, worseMovieInput, minusOneInput, zeroInput, marginInput],
         outputs: marginLoss
     });
@@ -101,7 +101,13 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
                 const userEmbeddings = (await userEmbeddingLayer.getWeights()[0].array()).map(embedding => embedding.slice(0, 2));
                 const movieEmbeddings = (await movieEmbeddingLayer.getWeights()[0].array()).map(embedding => embedding.slice(0, 2));
 
+                // Hacer predicciones para el nuevo usuario
+                const newUserEmbedding = tf.tensor(userEmbeddings[newUserIndex]);
+                const movieEmbeddingsTensor = tf.tensor(movieEmbeddings);
+                const predictions = await tf.matMul(movieEmbeddingsTensor, newUserEmbedding.reshape([2, 1])).array();
+
                 self.postMessage({ type: 'plot', lossHistory, valLossHistory, userEmbeddings, movieEmbeddings });
+                self.postMessage({ type: 'predictions', predictions: predictions.flat(), newUserIndex });
 
                 statusCallback(`(Epoch ${epochCount}) Train_loss: ${last_loss}, Val_loss: ${last_val_loss}`);
             },
@@ -115,8 +121,8 @@ async function trainModel(trainData, valData, numUsers, numMovies, statusCallbac
 }
 
 self.addEventListener('message', async (event) => {
-    const { trainData, valData, numUsers, numMovies } = event.data;
-    await trainModel(trainData, valData, numUsers, numMovies, (status) => {
+    const { trainData, valData, numUsers, numMovies, newUserIndex } = event.data;
+    await trainModel(trainData, valData, numUsers, numMovies, newUserIndex, (status) => {
         self.postMessage({ type: 'status', status });
     }, (batchCount, totalBatches, epochs) => {
         self.postMessage({ type: 'progress', batchCount, totalBatches, epochs});

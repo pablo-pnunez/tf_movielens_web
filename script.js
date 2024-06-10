@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
             const optionNulo = document.createElement('option');
             optionNulo.value = 0;
-            optionNulo.textContent = "Nulo";
+            optionNulo.textContent = "No";
             scoreSelect.appendChild(optionNulo);
     
             for (let i = 1; i <= 10; i++) {
@@ -108,6 +108,81 @@ document.addEventListener('DOMContentLoaded', async () => {
             tableBody.appendChild(row);
         });
     };    
+
+    // Función para recuperar las valoraciones del usuario de la tabla y crear preferencias
+    const addUserRatingsToTrainingData = () => {
+        const tableBody = document.getElementById('new-user-table');
+        const rows = tableBody.getElementsByTagName('tr');
+        let ratings = [];  // formato [(pelicula, valoración), ... ]
+    
+        for (let row of rows) {
+            const movieIndex = row.getElementsByTagName('td')[0].textContent - 1;
+            const score = parseInt(row.getElementsByTagName('select')[0].value);
+            if (score !== 0) {  // Filtrar puntuaciones nulas
+                ratings.push([movieIndex, score]);
+            }
+        }
+    
+        // Si no hay valoraciones, devolver null
+        if (ratings.length === 0) {
+            console_log("No hay valoraciones para añadir.");
+            return { combinedTrainData: trainData, userId: null };
+        }
+
+        let bestMovies = [];
+        let worstMovies = [];
+        const newUserIndex = numUsers;  // Nuevo usuario
+    
+        for (let i = 0; i < ratings.length - 1; i++) {
+            for (let j = i + 1; j < ratings.length; j++) {
+                const movie_i = ratings[i][0];
+                const score_i = ratings[i][1];
+                const movie_j = ratings[j][0];
+                const score_j = ratings[j][1];
+                if (score_i > score_j) {
+                    bestMovies.push(movie_i);
+                    worstMovies.push(movie_j);
+                } else if (score_i < score_j) {
+                    bestMovies.push(movie_j);
+                    worstMovies.push(movie_i);
+                }
+            }
+        }
+    
+        // Crear el nuevo DataFrame
+        const newTrainData = {
+            u: Array(bestMovies.length).fill(newUserIndex),
+            b: bestMovies,
+            w: worstMovies
+        };
+
+        // Crear la nueva variable combinando los datos originales con los nuevos datos
+        const trainProcessed = {
+            u: trainData.u.concat(newTrainData.u),
+            b: trainData.b.concat(newTrainData.b),
+            w: trainData.w.concat(newTrainData.w)
+        };
+
+        // Incrementar el número de usuarios
+        numUsers += 1;
+
+        console_log(`Nuevas valoraciones de usuario añadidas al conjunto de entrenamiento. Usuario: ${newUserIndex} Total: ${numUsers}`);
+
+        // Ahora puedes usar trainProcessed para el entrenamiento
+        return { trainProcessed, newUserIndex };
+    };
+    
+    // Función para actualizar las predicciones en la tabla
+    const updatePredictions = (predictions) => {
+        const tableBody = document.getElementById('new-user-table');
+        const rows = tableBody.getElementsByTagName('tr');
+
+        predictions.forEach((pred, index) => {
+            const row = rows[index];
+            const predictionCell = row.getElementsByTagName('td')[3]; // Asumiendo que la predicción está en la cuarta columna
+            predictionCell.textContent = pred.toFixed(3); // Mostrar con 2 decimales
+        });
+    };
 
     // Comprobar si WebGL está disponible
     if (tf.ENV.get('WEBGL_VERSION') > 0) {
@@ -153,19 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Rellenar la tabla
     addMoviesToTable(movies, userData);
 
-    // Preparar los datos de entrenamiento
-    console_log("Preprocesando datos...");
-
-    const processData = (data) => {
-        const userInputs = data.u.slice(); // Clonar los arrays
-        const betterMovieInputs = data.b.slice(); // Clonar los arrays
-        const worseMovieInputs = data.w.slice(); // Clonar los arrays
-        return { userInputs, betterMovieInputs, worseMovieInputs};
-    };
-
-    const trainProcessed = processData(trainData);
-    const valProcessed = processData(valData);
-
+    // Info
     console_log(`#Usuarios: ${numUsers} #Peliculas: ${numMovies}`);
 
     let embeddingsPlotCreated = false;
@@ -189,6 +252,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const startTraining = () => {
         console_log("Iniciando entrenamiento...");
 
+        // cambiar los nombres de las columnas
+
+        // Recuperar las valoraciones del usuario desde la tabla y añadirlas al conjunto
+        const { trainProcessed, newUserIndex } = addUserRatingsToTrainingData()
+
+        // Crear el worker con el modelo
         trainWorker = new Worker('train-worker.js');
 
         // Deshabilitar/habilitar botones
@@ -196,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Escuchar los mensajes del Web Worker para el entrenamiento
         trainWorker.addEventListener('message', (event) => {
-            const { type, status, batchCount, totalBatches, epochs, lossHistory, valLossHistory, userEmbeddings, movieEmbeddings } = event.data;
+            const { type, status, batchCount, totalBatches, epochs, lossHistory, valLossHistory, userEmbeddings, movieEmbeddings, predictions } = event.data;
             if (type === 'status') {
                 console_log(status);
             } else if (type === 'progress') {
@@ -212,10 +281,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             } else if (type === 'plot') {
                 if (!embeddingsPlotCreated) {
-                    createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies);
+                    createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, newUserIndex);
                     embeddingsPlotCreated = true;
                 } else {
-                    updateEmbeddingsPlot(userEmbeddings, movieEmbeddings);
+                    updateEmbeddingsPlot(userEmbeddings, movieEmbeddings, newUserIndex);
                 }
                 if (!lossPlotCreated) {
                     createLossPlot(lossHistory, valLossHistory);
@@ -223,14 +292,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else {
                     updateLossPlot(lossHistory, valLossHistory);
                 }
+            }else if (type === 'predictions') {
+                updatePredictions(predictions);
             }
         });
 
         // Iniciar el entrenamiento del modelo en el Web Worker
         trainWorker.postMessage({ 
-            trainData: { u: trainProcessed.userInputs, b: trainProcessed.betterMovieInputs, w: trainProcessed.worseMovieInputs },
-            valData: { u: valProcessed.userInputs, b: valProcessed.betterMovieInputs, w: valProcessed.worseMovieInputs },
-            numUsers, numMovies 
+            trainData: { u: trainProcessed.u, b: trainProcessed.b, w: trainProcessed.w },
+            valData: { u: valData.u, b: valData.b, w: valData.w },
+            numUsers, numMovies, newUserIndex
         });
     };
 
@@ -258,32 +329,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnStop.addEventListener('click', stopTraining);
 
     // Función para visualizar embeddings
-    const createEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies) => {
+    const createEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies, newUserIndex = null) => {
         const userCoords = Array.from({ length: numUsers }, (_, i) => userEmbeddings[i]);
         const movieCoords = Array.from({ length: numMovies }, (_, i) => movieEmbeddings[i]);
 
-        const userTrace = {
-            x: userCoords.map(coord => coord[0]),
-            y: userCoords.map(coord => coord[1]),
-            mode: 'markers',
-            type: 'scatter',
-            name: 'Users',
-            marker: { color: '#03a9f4' }
-        };
+        const userTrace = { x: userCoords.map(coord => coord[0]), y: userCoords.map(coord => coord[1]), mode: 'markers', type: 'scatter', name: 'Users', marker: { color: '#03a9f4' } };
 
-        const movieTrace = {
-            x: movieCoords.map(coord => coord[0]),
-            y: movieCoords.map(coord => coord[1]),
-            text: movies.Title, 
-            hoverinfo: 'text',
-            mode: 'markers',
-            type: 'scatter',
-            name: 'Movies',
-            marker: { color: '#f44336' }
-        };
+        const movieTrace = { x: movieCoords.map(coord => coord[0]), y: movieCoords.map(coord => coord[1]), text: movies.Title, hoverinfo: 'text', mode: 'markers', type: 'scatter', name: 'Movies', marker: { symbol: 'square', color: '#f44336' } };
 
         const data = [userTrace, movieTrace];
         
+        // Si se ha añadido un usuario nuevo
+        if (newUserIndex !== null) {
+            const newUserTrace = { x: [userCoords[newUserIndex][0]], y: [userCoords[newUserIndex][1]], mode: 'markers', type: 'scatter', name: 'New User', marker: { color: '#ff9800' } };
+            data.push(newUserTrace);
+        }
+
         const layout = {
             margin: { t: 50, l: 50, r: 50, b: 50 },
             legend: { x: 1, xanchor: 'right', y: 1 },
@@ -294,12 +355,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         Plotly.newPlot('emb-plot', data, layout, { responsive: true });
     };
 
-    const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings) => {
+    const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, newUserIndex = null) => {
         const userCoords = Array.from({ length: userEmbeddings.length }, (_, i) => userEmbeddings[i]);
         const movieCoords = Array.from({ length: movieEmbeddings.length }, (_, i) => movieEmbeddings[i]);
-
-        Plotly.restyle('emb-plot', 'x', [userCoords.map(coord => coord[0]), movieCoords.map(coord => coord[0])]);
-        Plotly.restyle('emb-plot', 'y', [userCoords.map(coord => coord[1]), movieCoords.map(coord => coord[1])]);
+    
+        const data = [
+            { x: userCoords.map(coord => coord[0]), y: userCoords.map(coord => coord[1]), type: 'scatter', mode: 'markers', name: 'Users', marker: { color: '#03a9f4' } },
+            { x: movieCoords.map(coord => coord[0]), y: movieCoords.map(coord => coord[1]), type: 'scatter', mode: 'markers', name: 'Movies', marker: { symbol: 'square', color: '#f44336' } }
+        ];
+    
+        if (newUserIndex !== null) {
+            const newUserTrace = { x: [userCoords[newUserIndex][0]], y: [userCoords[newUserIndex][1]], type: 'scatter', mode: 'markers', name: 'New User', marker: { color: '#ff9800'} };
+            data.push(newUserTrace);
+        }
+    
+        Plotly.react('emb-plot', data, { margin: { t: 50, l: 50, r: 50, b: 50 }, legend: { x: 1, xanchor: 'right', y: 1 }, xaxis: { title: 'X' }, yaxis: { title: 'Y' } }, { responsive: true });
     };
 
     const createLossPlot = (lossHistory, valLossHistory) => {
