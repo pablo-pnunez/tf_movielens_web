@@ -110,17 +110,8 @@ export const addUserRatingsToTrainingData = (numUsers, trainData) => {
     return { "trainProcessed": combinedTrainData, "newUserIndex": newUserIndex };
 };
 
-export const updatePredictions = async (model, userId, numMovies) => {
-    if (userId === null) return;
-
-    const predictions = [];
-    for (let i = 0; i < numMovies; i++) {
-        const pred = model({
-            u: tf.tensor([userId], null, 'int32'),
-            b: tf.tensor([i], null, 'int32')
-        });
-        predictions.push(await pred.dataSync());
-    }
+export const updatePredictions = async (predictions) => {
+    console_log("ESTO NO VALE; HAY QUE CREAR ALGÜN TIPO DE VARIABLE GLOBAL O ALGO");
 
     const tableBody = document.getElementById('new-user-table-content');
     const rows = tableBody.getElementsByTagName('tr');
