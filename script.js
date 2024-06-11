@@ -107,11 +107,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
             tableBody.appendChild(row);
         });
-
-        $('#new-user-table').DataTable({
-            // Agrega opciones personalizadas aquí
-            "order": [[ 0, "asc" ]] // Ordena por la primera columna de forma ascendente al cargar
-        });
     };    
 
     // Función para recuperar las valoraciones del usuario de la tabla y crear preferencias
@@ -187,6 +182,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const predictionCell = row.getElementsByTagName('td')[3]; // Asumiendo que la predicción está en la cuarta columna
             predictionCell.textContent = pred.toFixed(3); // Mostrar con 2 decimales
         });
+
+        let table = $('#new-user-table').DataTable();
+        table.draw();
     };
 
     // Comprobar si WebGL está disponible
@@ -232,6 +230,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Rellenar la tabla
     addMoviesToTable(movies, userData);
+
+    // Crear datatables
+    const table = new DataTable('#new-user-table', {
+        columnDefs: [{ orderable: false, targets: 1 }],
+        dom: 'frtp',
+        pagingType: 'simple_numbers',
+        responsive: true,
+        language: {
+            url: 'es-ES.json',
+        },
+    });
 
     // Info
     console_log(`#Usuarios: ${numUsers} #Peliculas: ${numMovies}`);
