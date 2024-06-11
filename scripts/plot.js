@@ -16,10 +16,11 @@ export const createEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numU
     }
 
     const layout = {
-        margin: { t: 50, l: 50, r: 50, b: 50 },
+        margin: { t: 70, l: 70, r: 70, b: 70 },
         legend: { x: 1, xanchor: 'right', y: 1 },
         xaxis: { title: 'X' },
         yaxis: { title: 'Y' },
+        hovermode: "closest",
     };
 
     Plotly.newPlot('emb-plot', data, layout, { responsive: true });
@@ -39,7 +40,15 @@ export const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, newU
         data.push(newUserTrace);
     }
 
-    Plotly.react('emb-plot', data, { margin: { t: 50, l: 50, r: 50, b: 50 }, legend: { x: 1, xanchor: 'right', y: 1 }, xaxis: { title: 'X' }, yaxis: { title: 'Y' } }, { responsive: true });
+    const layout = {
+        margin: { t: 70, l: 70, r: 70, b: 70 },
+        legend: { x: 1, xanchor: 'right', y: 1 },
+        xaxis: { title: 'X' },
+        yaxis: { title: 'Y' },
+        hovermode: "closest",
+    };
+
+    Plotly.react('emb-plot', data, layout, { responsive: true });
 };
 
 export const createLossPlot = async (lossHistory, valLossHistory) => {
@@ -62,7 +71,7 @@ export const createLossPlot = async (lossHistory, valLossHistory) => {
     };
 
     const layout = {
-        margin: { t: 50, l: 50, r: 50, b: 50 },
+        margin: { t: 70, l: 70, r: 70, b: 70 },
         xaxis: { title: 'Epoch' },
         yaxis: { title: 'Loss' },
         legend: { x: 1, xanchor: 'right', y: 1 }
@@ -90,7 +99,7 @@ export const updateLossPlot = async (lossHistory, valLossHistory) => {
     };
 
     const layout = {
-        margin: { t: 50, l: 50, r: 50, b: 50 },
+        margin: { t: 70, l: 70, r: 70, b: 70 },
         xaxis: { title: 'Epoch' },
         yaxis: { title: 'Loss' },
         legend: { x: 1, xanchor: 'right', y: 1 }
