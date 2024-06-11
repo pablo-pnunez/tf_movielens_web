@@ -24,135 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnStop = document.getElementById('btn-stop');
     const btnReset = document.getElementById('btn-reset');
 
-    // Función para añadir las puntuaciones de un nuevo usuario
-    const addMoviesToTable = (movies, userData) => {
-        const tableBody = document.getElementById('new-user-table-content');
-        tableBody.innerHTML = ''; // Limpiar la tabla antes de añadir nuevas filas
-    
-        movies.Title.forEach((title, index) => {
-            const row = document.createElement('tr');
-    
-            const cellIndex = document.createElement('td');
-            cellIndex.scope = 'row';
-            cellIndex.textContent = index + 1;
-    
-            const cellScore = document.createElement('td');
-            const scoreSelect = document.createElement('select');
-            scoreSelect.className = 'form-select';
-    
-            const optionNulo = document.createElement('option');
-            optionNulo.value = 0;
-            optionNulo.textContent = "No";
-            scoreSelect.appendChild(optionNulo);
-    
-            for (let i = 1; i <= 10; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                scoreSelect.appendChild(option);
-            }
-    
-            // Buscar la puntuación del usuario para esta película
-            const movieIndex = userData.movie.indexOf(index);
-            if (movieIndex !== -1) {
-                scoreSelect.value = userData.score[movieIndex];
-            }
-    
-            cellScore.appendChild(scoreSelect);
-    
-            const cellTitle = document.createElement('td');
-            cellTitle.textContent = title;
-    
-            const cellPrediction = document.createElement('td');
-            cellPrediction.textContent = 'N/D';
-    
-            row.appendChild(cellIndex);
-            row.appendChild(cellScore);
-            row.appendChild(cellTitle);
-            row.appendChild(cellPrediction);
-    
-            tableBody.appendChild(row);
-        });
-    };    
-
-    // Función para recuperar las valoraciones del usuario de la tabla y crear preferencias
-    const addUserRatingsToTrainingData = () => {
-        const tableBody = document.getElementById('new-user-table-content');
-        const rows = tableBody.getElementsByTagName('tr');
-        let ratings = [];  // formato [(pelicula, valoración), ... ]
-    
-        for (let row of rows) {
-            const movieIndex = row.getElementsByTagName('td')[0].textContent - 1;
-            const score = parseInt(row.getElementsByTagName('select')[0].value);
-            if (score !== 0) {  // Filtrar puntuaciones nulas
-                ratings.push([movieIndex, score]);
-            }
-        }
-    
-        // Si no hay valoraciones, devolver null
-        if (ratings.length === 0) {
-            console_log("No hay valoraciones para añadir.");
-            return { combinedTrainData: trainData, userId: null };
-        }
-
-        let bestMovies = [];
-        let worstMovies = [];
-        const newUserIndex = numUsers;  // Nuevo usuario
-    
-        for (let i = 0; i < ratings.length - 1; i++) {
-            for (let j = i + 1; j < ratings.length; j++) {
-                const movie_i = ratings[i][0];
-                const score_i = ratings[i][1];
-                const movie_j = ratings[j][0];
-                const score_j = ratings[j][1];
-                if (score_i > score_j) {
-                    bestMovies.push(movie_i);
-                    worstMovies.push(movie_j);
-                } else if (score_i < score_j) {
-                    bestMovies.push(movie_j);
-                    worstMovies.push(movie_i);
-                }
-            }
-        }
-    
-        // Crear el nuevo DataFrame
-        const newTrainData = {
-            u: Array(bestMovies.length).fill(newUserIndex),
-            b: bestMovies,
-            w: worstMovies
-        };
-
-        // Crear la nueva variable combinando los datos originales con los nuevos datos
-        const trainProcessed = {
-            u: trainData.u.concat(newTrainData.u),
-            b: trainData.b.concat(newTrainData.b),
-            w: trainData.w.concat(newTrainData.w)
-        };
-
-        // Incrementar el número de usuarios
-        numUsers += 1;
-
-        console_log(`Nuevas valoraciones de usuario añadidas al conjunto de entrenamiento. Usuario: ${newUserIndex} Total: ${numUsers}`);
-
-        // Ahora puedes usar trainProcessed para el entrenamiento
-        return { trainProcessed, newUserIndex };
-    };
-    
-    // Función para actualizar las predicciones en la tabla
-    const updatePredictions = (predictions) => {
-        const tableBody = document.getElementById('new-user-table-content');
-        const rows = tableBody.getElementsByTagName('tr');
-
-        predictions.forEach((pred, index) => {
-            const row = rows[index];
-            const predictionCell = row.getElementsByTagName('td')[3]; // Asumiendo que la predicción está en la cuarta columna
-            predictionCell.textContent = pred.toFixed(3); // Mostrar con 2 decimales
-        });
-
-        let table = $('#new-user-table').DataTable();
-        table.draw();
-    };
-
     // Comprobar si WebGL está disponible
     if (tf.ENV.get('WEBGL_VERSION') > 0) {
         console_log('WebGL is enabled');
@@ -235,7 +106,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         // cambiar los nombres de las columnas
 
         // Recuperar las valoraciones del usuario desde la tabla y añadirlas al conjunto
-        const { trainProcessed, newUserIndex } = addUserRatingsToTrainingData()
+        const { trainProcessed, newUserIndex } = addUserRatingsToTrainingData(numUsers, trainData)
+
+        //Si hay valoraciones del usuario nuevo, tenemos un usuario más
+        if (newUserIndex !== null) { numUsers+=1;};
 
         // Crear el worker con el modelo
         trainWorker = new Worker('train-worker.js');

@@ -1,3 +1,5 @@
+import {console_log} from './console.js';
+
 export const addMoviesToTable = (movies, userData) => {
     const tableBody = document.getElementById('new-user-table-content');
     tableBody.innerHTML = ''; // Limpiar la tabla antes de añadir nuevas filas
@@ -48,10 +50,12 @@ export const addMoviesToTable = (movies, userData) => {
     });
 };    
 
-export const addUserRatingsToTrainingData = () => {
+export const addUserRatingsToTrainingData = (numUsers, trainData) => {
     const tableBody = document.getElementById('new-user-table-content');
     const rows = tableBody.getElementsByTagName('tr');
     let ratings = [];  // formato [(pelicula, valoración), ... ]
+
+    console_log("ESTO NO VALE; HAY QUE CREAR ALGÜN TIPO DE VARIABLE GLOBAL O ALGO; POR QUE SOLO PILLA LA PRIMERA PÄGINA DE LA TABLA");
 
     for (let row of rows) {
         const movieIndex = row.getElementsByTagName('td')[0].textContent - 1;
@@ -64,7 +68,7 @@ export const addUserRatingsToTrainingData = () => {
     // Si no hay valoraciones, devolver null
     if (ratings.length === 0) {
         console_log("No hay valoraciones para añadir.");
-        return { combinedTrainData: trainData, userId: null };
+        return { "trainProcessed": trainData, "newUserIndex": null };
     }
 
     let bestMovies = [];
@@ -103,7 +107,7 @@ export const addUserRatingsToTrainingData = () => {
 
     console_log(`Se añadieron ${ratings.length} valoraciones del usuario ${newUserIndex}.`);
 
-    return { combinedTrainData, userId: newUserIndex };
+    return { "trainProcessed": combinedTrainData, "newUserIndex": newUserIndex };
 };
 
 export const updatePredictions = async (model, userId, numMovies) => {
