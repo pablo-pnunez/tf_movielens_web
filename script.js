@@ -69,17 +69,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Rellenar la tabla
     addMoviesToTable(movies, userData);
 
-    // Crear datatables
-    const table = new DataTable('#new-user-table', {
-        columnDefs: [{ orderable: false, targets: 1 }],
-        dom: 'frtp',
-        pagingType: 'simple_numbers',
-        responsive: true,
-        language: {
-            url: 'es-ES.json',
-        },
-    });
-
     // Info
     console_log(`#Usuarios: ${numUsers} #Peliculas: ${numMovies}`);
 
@@ -98,6 +87,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         nEpochs.disabled = isTraining;
         batchSize.disabled = isTraining;
         learningRate.disabled = isTraining;
+
+        $('#new-user-table input').prop('disabled', isTraining);
     };
 
     // Función para iniciar el entrenamiento del modelo en el Web Worker

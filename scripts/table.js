@@ -1,69 +1,87 @@
 import {console_log} from './console.js';
 
+const new_user_table_data = { data: [], columns: [ { title: "#" }, { title: "Nota" }, { title: "Título" }, { title: "Predicción" } ] };
+let new_user_table = null;
+
+const createDataTable = () => {
+    // Crear o recargar el DataTable con los datos actualizados
+    if (new_user_table !== null) {
+        new_user_table.clear();
+        new_user_table.rows.add(new_user_table_data.data);
+        new_user_table.draw();
+    } else {
+        // Crear datatable por primera vez
+        new_user_table = $('#new-user-table').DataTable({
+            data: new_user_table_data.data,
+            columns: new_user_table_data.columns,
+            //columnDefs: [{ orderable: false, targets: 1 }],
+            dom: 'frtp',
+            pagingType: 'simple_numbers',
+            responsive: true,
+            language: { url: 'es-ES.json' },
+            stateSave: true
+        });
+    }
+
+    // Agregar eventos de escucha a los inputs
+    $('#new-user-table').on('input', 'input', handleInputUpdate);
+};
+
 export const addMoviesToTable = (movies, userData) => {
-    const tableBody = document.getElementById('new-user-table-content');
-    tableBody.innerHTML = ''; // Limpiar la tabla antes de añadir nuevas filas
+    // Limpiar los datos existentes en new_user_table
+    new_user_table_data.data = [];
 
+    // Llenar new_user_table con los datos de las películas y las puntuaciones
     movies.Title.forEach((title, index) => {
-        const row = document.createElement('tr');
-
-        const cellIndex = document.createElement('td');
-        cellIndex.scope = 'row';
-        cellIndex.textContent = index + 1;
-
-        const cellScore = document.createElement('td');
-        const scoreSelect = document.createElement('select');
-        scoreSelect.className = 'form-select';
-
-        const optionNulo = document.createElement('option');
-        optionNulo.value = 0;
-        optionNulo.textContent = "No";
-        scoreSelect.appendChild(optionNulo);
-
-        for (let i = 1; i <= 10; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = i;
-            scoreSelect.appendChild(option);
-        }
-
         // Buscar la puntuación del usuario para esta película
         const movieIndex = userData.movie.indexOf(index);
-        if (movieIndex !== -1) {
-            scoreSelect.value = userData.score[movieIndex];
-        }
+        const scoreValue = movieIndex !== -1 ? userData.score[movieIndex] : -1;
 
-        cellScore.appendChild(scoreSelect);
+        // Crear un input numérico para la puntuación
+        const scoreInput = `<span style="display:none">${String(scoreValue).padStart(3, '0')}</span><input type="number" min="-1" max="10" value="${scoreValue}" class="form-control" data-index="${index}"/>`;
 
-        const cellTitle = document.createElement('td');
-        cellTitle.textContent = title;
-
-        const cellPrediction = document.createElement('td');
-        cellPrediction.textContent = 'N/D';
-
-        row.appendChild(cellIndex);
-        row.appendChild(cellScore);
-        row.appendChild(cellTitle);
-        row.appendChild(cellPrediction);
-
-        tableBody.appendChild(row);
+        // Crear la fila de datos para la tabla
+        new_user_table_data.data.push([ index + 1, scoreInput, title, 'N/D' ]);
     });
-};    
+
+    createDataTable();
+
+};
+
+const handleInputUpdate = (event) => {
+    const $input = $(event.target);
+    const index = $input.closest('tr').find('td:first').text() - 1; // Obtener el índice de la fila
+    const newValue = parseInt($input.val());
+    const row = new_user_table_data.data[index];
+
+    const span = `<span style="display:none">${String(newValue).padStart(3, "0")}</span>`;
+
+    if (!isNaN(newValue)) {  // Verificar que el valor es un número válido
+        row[1] = `${span}<input type="number" min="-1" max="10" value="${newValue}" class="form-control" data-index="${index}"/>`;
+    } else {
+        row[1] = `${span}<input type="number" min="-1" max="10" value="-1" class="form-control" data-index="${index}"/>`;
+    }
+
+    // Actualizar la celda en el DataTable sin recrearlo
+    const cell = new_user_table.cell($input.closest('td'));
+    cell.data(row[1]).draw(false); // Actualizar la celda y no redibujar toda la tabla
+};
 
 export const addUserRatingsToTrainingData = (numUsers, trainData) => {
-    const tableBody = document.getElementById('new-user-table-content');
-    const rows = tableBody.getElementsByTagName('tr');
-    let ratings = [];  // formato [(pelicula, valoración), ... ]
+    let ratings = []; 
 
-    console_log("ESTO NO VALE; HAY QUE CREAR ALGÜN TIPO DE VARIABLE GLOBAL O ALGO; POR QUE SOLO PILLA LA PRIMERA PÄGINA DE LA TABLA");
+    // Recorrer los datos de new_user_table_data para obtener las puntuaciones
+    new_user_table_data.data.forEach((row) => {
+        const movieIndex = row[0] - 1;
+        const scoreInputHtml = row[1];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(scoreInputHtml, 'text/html');
+        const score = parseInt(doc.querySelector('input').value);
 
-    for (let row of rows) {
-        const movieIndex = row.getElementsByTagName('td')[0].textContent - 1;
-        const score = parseInt(row.getElementsByTagName('select')[0].value);
-        if (score !== 0) {  // Filtrar puntuaciones nulas
+        if (score !== -1) {  // Filtrar puntuaciones nulas
             ratings.push([movieIndex, score]);
         }
-    }
+    });
 
     // Si no hay valoraciones, devolver null
     if (ratings.length === 0) {
@@ -111,14 +129,13 @@ export const addUserRatingsToTrainingData = (numUsers, trainData) => {
 };
 
 export const updatePredictions = async (predictions) => {
-    console_log("ESTO NO VALE; HAY QUE CREAR ALGÜN TIPO DE VARIABLE GLOBAL O ALGO");
+    // Actualizar las predicciones en new_user_table_data
+    new_user_table_data.data.forEach((row, index) => {
+        const movieIndex = row[0] - 1;
+        if (predictions[movieIndex] !== undefined) {
+            row[3] = predictions[movieIndex].toFixed(2);
+        }
+    });
 
-    const tableBody = document.getElementById('new-user-table-content');
-    const rows = tableBody.getElementsByTagName('tr');
-
-    for (let row of rows) {
-        const movieIndex = row.getElementsByTagName('td')[0].textContent - 1;
-        const prediction = predictions[movieIndex].toFixed(2);
-        row.getElementsByTagName('td')[3].textContent = prediction;
-    }
+    createDataTable();
 };

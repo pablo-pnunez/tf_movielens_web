@@ -25,7 +25,7 @@ const processQueue = () => {
         if (index < line.length) {
             consola.textContent += line.charAt(index);
             index++;
-            setTimeout(writeCharacter, 1); // Ajusta el tiempo para la velocidad de escritura
+            setTimeout(writeCharacter, 0.5); // Ajusta el tiempo para la velocidad de escritura
         } else {
             consola.scrollTop = consola.scrollHeight;
             isWriting = false;
