@@ -1,3 +1,6 @@
+import {console_log} from './scripts/console.js';
+import { addMoviesToTable, addUserRatingsToTrainingData, updatePredictions } from './scripts/table.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Poner los tooltips
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
@@ -20,43 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
     const btnReset = document.getElementById('btn-reset');
-
-    // Funciones para la consola
-    let queue = [];
-    let isWriting = false;
-    const console_log = (line) => {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const timestamp = `[${hours}:${minutes}:${seconds}] `;
-        const fullLine = "\n" + timestamp + line;
-
-        queue.push(fullLine);
-        processQueue();
-    };
-
-    const processQueue = () => {
-        if (isWriting || queue.length === 0) return;
-
-        isWriting = true;
-        const line = queue.shift();
-        let index = 0;
-
-        const writeCharacter = () => {
-            if (index < line.length) {
-                consola.textContent += line.charAt(index);
-                index++;
-                setTimeout(writeCharacter, 1); // Ajusta el tiempo para la velocidad de escritura
-            } else {
-                consola.scrollTop = consola.scrollHeight;
-                isWriting = false;
-                processQueue(); // Procesar la siguiente línea en la cola
-            }
-        };
-
-        writeCharacter();
-    };
 
     // Función para añadir las puntuaciones de un nuevo usuario
     const addMoviesToTable = (movies, userData) => {
@@ -196,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Cargar los datos de entrenamiento
     console_log("Cargando los datos de entrenamiento...");
-    let trainData, valData, numUsers, numMovies, movies, userData;
+    let trainData, valData, numUsers, numMovies, movies, infoData, userData;
     try {
         const trainResponse = await fetch('data/ranking/train.json');
         trainData = await trainResponse.json();
