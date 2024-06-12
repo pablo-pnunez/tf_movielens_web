@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex);
                     embeddingsPlotCreated = true;
                 } else {
-                    updateEmbeddingsPlot(userEmbeddings, movieEmbeddings, newUserIndex);
+                    updateEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex);
                 }
                 if (!lossPlotCreated) {
                     createLossPlot(lossHistory, valLossHistory);
