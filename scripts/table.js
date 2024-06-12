@@ -3,7 +3,7 @@ import {console_log} from './console.js';
 const new_user_table_data = { data: [], columns: [ { title: "#" }, { title: "Nota" }, { title: "Título" }, { title: "Predicción" } ] };
 let new_user_table = null;
 
-const createDataTable = () => {
+const createDataTable = (disabled=false) => {
     // Crear o recargar el DataTable con los datos actualizados
     if (new_user_table !== null) {
         new_user_table.clear();
@@ -22,6 +22,9 @@ const createDataTable = () => {
             stateSave: true
         });
     }
+
+    // Desactivar o no los inputs
+    $('#new-user-table input').prop('disabled', disabled);
 
     // Agregar eventos de escucha a los inputs
     $('#new-user-table').on('input', 'input', handleInputUpdate);
@@ -137,5 +140,5 @@ export const updatePredictions = async (predictions) => {
         }
     });
 
-    createDataTable();
+    createDataTable(true);
 };
