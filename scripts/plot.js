@@ -43,6 +43,7 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
             hoverinfo: 'text',
             type: 'scatter',
             text: 'Nuevo usuario',
+            name: 'Nuevo usuario',
             marker: { color: 'blue'}
         };
 

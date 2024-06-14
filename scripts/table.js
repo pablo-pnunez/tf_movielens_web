@@ -3,7 +3,12 @@ import {console_log} from './console.js';
 const new_user_table_data = { data: [], columns: [ { title: "#" }, { title: "Nota" }, { title: "Título" }, { title: "Predicción" } ] };
 let new_user_table = null;
 
-const createDataTable = (disabled=false) => {
+export const createDataTable = (disabled=false) => {
+    
+    // Desactivar o no los inputs
+    //$('#new-user-table input').prop('disabled', disabled);
+    activarDesactivarInputs(disabled)
+    
     // Crear o recargar el DataTable con los datos actualizados
     if (new_user_table !== null) {
         new_user_table.clear();
@@ -22,13 +27,39 @@ const createDataTable = (disabled=false) => {
             stateSave: true
         });
     }
-
-    // Desactivar o no los inputs
-    $('#new-user-table input').prop('disabled', disabled);
+    
+    // Forzar redibujado?
+    new_user_table.draw();
 
     // Agregar eventos de escucha a los inputs
     $('#new-user-table').on('input', 'input', handleInputUpdate);
+
 };
+
+// Método para activar o desactivar los inputs en la segunda columna
+const activarDesactivarInputs = (disabled) => {
+    // Iterar sobre todas las filas en `data`
+    new_user_table_data.data.forEach(fila => {
+      // El segundo elemento (index 1) de cada fila es el input en la segunda columna
+      let inputHTML = fila[1];
+  
+      // Crear un elemento temporal para manipular el HTML
+      let tempElement = document.createElement('div');
+      tempElement.innerHTML = inputHTML;
+  
+      // Seleccionar el input dentro del HTML temporal
+      let input = tempElement.querySelector('input');
+  
+      // Verificar si se encontró un input
+      if (input) {
+        // Activar o desactivar el input según el parámetro `activar`
+        input.disabled = disabled;
+  
+        // Actualizar el HTML de la fila con el input modificado
+        fila[1] = tempElement.innerHTML;
+      }
+    });
+  }
 
 export const addMoviesToTable = (movies, userData) => {
     // Limpiar los datos existentes en new_user_table

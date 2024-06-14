@@ -1,5 +1,5 @@
 import { console_log } from './scripts/console.js';
-import { addMoviesToTable, addUserRatingsToTrainingData, updatePredictions } from './scripts/table.js';
+import { addMoviesToTable, addUserRatingsToTrainingData, updatePredictions, createDataTable } from './scripts/table.js';
 import { createEmbeddingsPlot, updateEmbeddingsPlot, createLossPlot, updateLossPlot } from './scripts/plot.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         batchSize.disabled = isTraining;
         learningRate.disabled = isTraining;
 
-        $('#new-user-table input').prop('disabled', isTraining);
+        createDataTable(isTraining)
     };
 
     // Función para iniciar el entrenamiento del modelo en el Web Worker
