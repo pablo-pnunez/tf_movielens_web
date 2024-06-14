@@ -117,16 +117,7 @@ async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex,
 
 
 self.addEventListener('message', async (event) => {
-    const { trainData, valData, numUsers, numMovies, newUserIndex } = event.data;
-
-    // Crear el diccionario de configuración
-    const config = {
-        dropoutRate: 0.1,
-        learningRate: 0.0001,
-        embeddingDim: 2,
-        batchSize: 1024,
-        epochs: 100
-    };
+    const { trainData, valData, numUsers, numMovies, newUserIndex, config} = event.data;
 
     // Entrenar el modelo
     await trainModel(trainData, valData, numUsers, numMovies, newUserIndex, config, (status) => {

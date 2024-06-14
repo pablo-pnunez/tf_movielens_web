@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="bg-secondary mb-5" data-bs-theme="light">
+<body class="mb-5" data-bs-theme="light">
 
     <!-- As a heading -->
     <nav class="navbar bg-dark">
@@ -36,12 +36,12 @@
                         </div>
                         <div class="input-group">
                             <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Tamaño embedding">K</span>
-                            <input id="emb-size" type="number" class="form-control" value="5" max="10" min="2">
+                            <input id="emb-size" type="number" class="form-control" value="2" max="10" min="2">
                         </div>
 
                         <div class="input-group">
                             <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Regularizador">μ</span>
-                            <input id="regularizer" type="number" class="form-control" value="0.01" max="0.1" min="0.0001" step="0.0001">
+                            <input id="regularizer" type="number" class="form-control" value="0.1" max="1" min="0" step="0.1">
                         </div>
 
                         <hr class="">
@@ -53,12 +53,12 @@
 
                         <div class="input-group">
                             <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Tamaño del batch">Batch</span>
-                            <input id="batch-size" type="number" class="form-control" value="32" max="1024" min="8" step="8">
+                            <input id="batch-size" type="number" class="form-control" value="1024" max="1024" min="8" step="1">
                         </div>
 
                         <div class="input-group">
                             <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="Learning rate">α</span>
-                            <input id="learning-rate" type="number" class="form-control" value="0.01" max="0.1" min="0.0001" step="0.0001">
+                            <input id="learning-rate" type="number" class="form-control" value="0.0001" max="0.1" min="0.0001" step="0.0001">
                         </div>
 
                         <hr class="">
@@ -74,6 +74,22 @@
 
             </div>
             <div class="col-xl-10 col-lg-9 col-md-8 col-sm-12">
+
+                <div class="col-sm-12 mt-3">
+                    <div class="card ">
+                        <div class="card-header">
+                            Progreso
+                        </div>
+                        <div class="progress mx-2 mb-1 mt-2">
+                            <div id="batch-pgb" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            <medium class="justify-content-center d-flex position-absolute w-100 font-weight-bold">BATCH</medium>
+                        </div>
+                        <div class="progress mx-2 mb-2">
+                            <div id="epoch-pgb" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            <medium class="justify-content-center d-flex position-absolute w-100 font-weight-bold">EPOCH</medium>
+                        </div>
+                    </div>
+                </div>
 
 
                 <div class="row">
@@ -109,14 +125,7 @@
                             Consola
                         </div>
                         <textarea id="console" class=" mt-2" style="width: 100%; min-height:60px; overflow:hidden"></textarea>
-                        <div class="progress mx-2 mb-1 mt-2">
-                            <div id="batch-pgb" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <div class="progress mx-2 mb-2">
-                            <div id="epoch-pgb" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
                     </div>
-
                 </div>
 
                 <div class="row">

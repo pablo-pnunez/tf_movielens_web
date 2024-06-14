@@ -143,11 +143,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+        // Crear el diccionario de configuración
+        const config = {
+            dropoutRate: parseFloat(regularizer.value),
+            learningRate: parseFloat(learningRate.value),
+            embeddingDim: parseInt(embSize.value),
+            batchSize: parseInt(batchSize.value),
+            epochs: parseInt(nEpochs.value)
+        };
+
         // Iniciar el entrenamiento del modelo en el Web Worker
         trainWorker.postMessage({ 
             trainData: { u: trainProcessed.u, b: trainProcessed.b, w: trainProcessed.w },
             valData: { u: valData.u, b: valData.b, w: valData.w },
-            numUsers, numMovies, newUserIndex
+            numUsers, numMovies, newUserIndex, config
         });
     };
 

@@ -2,6 +2,7 @@ import {console_log} from './console.js';
 
 const new_user_table_data = { data: [], columns: [ { title: "#" }, { title: "Nota" }, { title: "Título" }, { title: "Predicción" } ] };
 let new_user_table = null;
+let table_state = null;
 
 export const createDataTable = (disabled=false) => {
     
@@ -9,17 +10,28 @@ export const createDataTable = (disabled=false) => {
     //$('#new-user-table input').prop('disabled', disabled);
     activarDesactivarInputs(disabled)
     
+    // Obtener el estado guardado, si existe
+    if (new_user_table !== null) {
+        table_state = new_user_table.state();
+    }
+
     // Crear o recargar el DataTable con los datos actualizados
     if (new_user_table !== null) {
         new_user_table.clear();
         new_user_table.rows.add(new_user_table_data.data);
         new_user_table.draw();
+
+        // Restaurar el estado si estaba guardado
+        if (table_state !== null) {
+            new_user_table.state.clear();  // Limpiar el estado actual
+            new_user_table.state(table_state);   // Aplicar el estado guardado
+            new_user_table.draw();         // Redibujar la tabla con el estado restaurado
+        }
     } else {
         // Crear datatable por primera vez
         new_user_table = $('#new-user-table').DataTable({
             data: new_user_table_data.data,
             columns: new_user_table_data.columns,
-            //columnDefs: [{ orderable: false, targets: 1 }],
             dom: 'frtp',
             pagingType: 'simple_numbers',
             responsive: true,
@@ -27,9 +39,6 @@ export const createDataTable = (disabled=false) => {
             stateSave: true
         });
     }
-    
-    // Forzar redibujado?
-    new_user_table.draw();
 
     // Agregar eventos de escucha a los inputs
     $('#new-user-table').on('input', 'input', handleInputUpdate);

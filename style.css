@@ -11,6 +11,13 @@
     font-size: small;
 }
 
+body{
+    background-color: #6c757d;
+    opacity: 0.8;
+    background-size: 10px 10px;
+    background-image: repeating-linear-gradient(45deg, #686f75 0, #686f75 1px, #6c757d 0, #6c757d 50%);
+}
+
 span.input-group-text {
     cursor: help;
 }
@@ -49,4 +56,24 @@ span.input-group-text {
  .dt-paging {
     margin-top: 20px !important;
     display: inline-block;
+ }
+
+ table input.form-control{
+    height: 30px;
+    padding: 0px;
+    text-align: center;
+    width: 50px;
+    padding-left: 10px;
+ }
+
+ table input.form-control[value="-1"]{
+    color:#dddddd;
+ }
+
+ #new-user-table_wrapper{
+    font-size:14px;
+ }
+
+ .progress{
+    height: 20px;
  }

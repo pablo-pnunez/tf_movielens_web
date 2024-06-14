@@ -78,7 +78,7 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
             aspectratio: { x: 1, y: 1 },
         },
         legend: {
-            x: "50%", y: -0.2, traceorder: 'normal',
+            x: 0.1, y: 0.1, traceorder: 'normal',
             orientation: "h",
             font: { family: 'sans-serif', size: 12, color: '#000' },
             bgcolor: '#ffffff',
@@ -130,7 +130,7 @@ const plotLoss = (lossHistory, valLossHistory, plotType = 'new') => {
         xaxis: { title: 'Epoch' },
         yaxis: { title: 'Loss' },
         legend: {
-            x: 0, y: 1, traceorder: 'normal',
+            x: 0.1, y: 0.1, traceorder: 'normal',
             orientation: "h",
             font: { family: 'sans-serif', size: 12, color: '#000' },
             bgcolor: '#ffffff',
