@@ -124,7 +124,7 @@ self.addEventListener('message', async (event) => {
         dropoutRate: 0.1,
         learningRate: 0.0001,
         embeddingDim: 2,
-        batchSize: 256,
+        batchSize: 1024,
         epochs: 100
     };
 

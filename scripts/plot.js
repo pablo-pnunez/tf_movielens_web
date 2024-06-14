@@ -72,7 +72,19 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
 
     const layout = {
         margin: { t: 50, l: 50, r: 50, b: 50 },
-        legend: { x: 1, xanchor: 'right', y: 1 },
+        //legend: { x: 1, xanchor: 'right', y: 1 },
+        scene:{
+            aspectmode:"manual",
+            aspectratio: { x: 1, y: 1 },
+        },
+        legend: {
+            x: "50%", y: -0.2, traceorder: 'normal',
+            orientation: "h",
+            font: { family: 'sans-serif', size: 12, color: '#000' },
+            bgcolor: '#ffffff',
+            bordercolor: '#b1b1b1',
+            borderwidth: 2
+        },
         xaxis: { title: 'X' },
         yaxis: { title: 'Y' },
         hovermode: "closest",
@@ -117,7 +129,14 @@ const plotLoss = (lossHistory, valLossHistory, plotType = 'new') => {
         margin: { t: 50, l: 50, r: 50, b: 50 },
         xaxis: { title: 'Epoch' },
         yaxis: { title: 'Loss' },
-        legend: { x: 1, xanchor: 'right', y: 1 }
+        legend: {
+            x: 0, y: 1, traceorder: 'normal',
+            orientation: "h",
+            font: { family: 'sans-serif', size: 12, color: '#000' },
+            bgcolor: '#ffffff',
+            bordercolor: '#b1b1b1',
+            borderwidth: 2
+        },
     };
 
     const data = [trainTrace, valTrace];
