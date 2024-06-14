@@ -1,28 +1,31 @@
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js');
 
-async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex, statusCallback, progressBarCallback) {
-    // Preparar los datos de entrenamiento
-    const trainUserTensor = tf.tensor2d(trainData.u, [trainData.u.length, 1]);
-    const trainBetterMovieTensor = tf.tensor2d(trainData.b, [trainData.b.length, 1]);
-    const trainWorseMovieTensor = tf.tensor2d(trainData.w, [trainData.w.length, 1]);
 
-    // Preparar los datos de validación
-    const valUserTensor = tf.tensor2d(valData.u, [valData.u.length, 1]);
-    const valBetterMovieTensor = tf.tensor2d(valData.b, [valData.b.length, 1]);
-    const valWorseMovieTensor = tf.tensor2d(valData.w, [valData.w.length, 1]);
+class MarginLayer extends tf.layers.Layer {
+    constructor() { super({}); }
+    // In this case, the output is like one of the inputs.
+    computeOutputShape(inputShapes) { return inputShapes[0]; }
+    // call() is where we do the computation.
+    call(inputs, kwargs) { 
+        const [input1, input2] = inputs;
+        // Restar con margen
+        const best_sub_worst = tf.sub(input1, input2);
+        const final = tf.sub(tf.scalar(1.0), best_sub_worst);
+        return final;
+    }
+    // Every layer needs a unique name.
+    getClassName() { return 'MarginLayer'; }
+}
 
-    // Crear el modelo de factorización de matrices
+
+// Función para crear el modelo
+function createModel(numUsers, numMovies, config) {
     const userInput = tf.input({ shape: [1], name: 'userInput' });
     const betterMovieInput = tf.input({ shape: [1], name: 'betterMovieInput' });
     const worseMovieInput = tf.input({ shape: [1], name: 'worseMovieInput' });
 
-    // El puto tf no tiene permite mezclar escalares y capas, además no tiene sub para restar
-    const zeroInput = tf.input({ shape: [1], name: 'zeros' });
-    const minusOneInput = tf.input({ shape: [1], name: 'minusOne' });
-    const marginInput = tf.input({ shape: [1], name: 'margin' });
-
-    const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: 2, inputLength: 1});
-    const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: 2, inputLength: 1 });
+    const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: config.embeddingDim, inputLength: 1 });
+    const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: config.embeddingDim, inputLength: 1 });
 
     const userEmbedding = userEmbeddingLayer.apply(userInput);
     const betterMovieEmbedding = movieEmbeddingLayer.apply(betterMovieInput);
@@ -32,76 +35,69 @@ async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex,
     const betterMovieVector = tf.layers.flatten().apply(betterMovieEmbedding);
     const worseMovieVector = tf.layers.flatten().apply(worseMovieEmbedding);
 
-    // Añadir capas de Dropout
-    const dropoutRate = 0.1; // Puedes ajustar esta tasa según sea necesario
-    const userVectorWithDropout = tf.layers.dropout({ rate: dropoutRate }).apply(userVector);
-    const betterMovieVectorWithDropout = tf.layers.dropout({ rate: dropoutRate }).apply(betterMovieVector);
-    const worseMovieVectorWithDropout = tf.layers.dropout({ rate: dropoutRate }).apply(worseMovieVector);
+    const userVectorWithDropout = tf.layers.dropout({ rate: config.dropoutRate }).apply(userVector);
+    const betterMovieVectorWithDropout = tf.layers.dropout({ rate: config.dropoutRate }).apply(betterMovieVector);
+    const worseMovieVectorWithDropout = tf.layers.dropout({ rate: config.dropoutRate }).apply(worseMovieVector);
 
-    // Calcular el producto escalar
     const betterDotProduct = tf.layers.dot({ axes: -1 }).apply([userVectorWithDropout, betterMovieVectorWithDropout]);
     const worseDotProduct = tf.layers.dot({ axes: -1 }).apply([userVectorWithDropout, worseMovieVectorWithDropout]);
 
-    // Simulación de la resta y cálculo del margen
-    const minus_worse = tf.layers.multiply().apply([worseDotProduct, minusOneInput]);
-    const margin_diff = tf.layers.add().apply([marginInput, minus_worse, betterDotProduct]);
-    const marginLoss = tf.layers.maximum().apply([margin_diff, zeroInput]);
+    const marginLayer = new MarginLayer().apply([betterDotProduct, worseDotProduct])
 
-    let model = tf.model({
-        inputs: [userInput, betterMovieInput, worseMovieInput, minusOneInput, zeroInput, marginInput],
-        outputs: marginLoss
+    const model = tf.model({
+        inputs: [userInput, betterMovieInput, worseMovieInput],
+        outputs: marginLayer // Configurar dos salidas
     });
 
+    function customLoss(yTrue, yPred) {
+        return tf.maximum(yTrue, yPred);
+      }
+    
     model.compile({
-        optimizer: tf.train.adam(0.0001),
-        loss: 'meanSquaredError'
+        optimizer: tf.train.adam(config.learningRate),
+        loss: customLoss,
     });
 
-    // Entrenar el modelo
-    const epochs = 100;
-    const batchSize = 256;
-    const totalBatches = Math.ceil(trainData.u.length / batchSize) * epochs;
+    return { model, userEmbeddingLayer, movieEmbeddingLayer };
+}
+
+// Función para entrenar el modelo
+async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex, config, statusCallback, progressBarCallback) {
+    // Crear el modelo
+    const { model, userEmbeddingLayer, movieEmbeddingLayer } = createModel(numUsers, numMovies, config);
+
+    const trainUserTensor = tf.tensor2d(trainData.u, [trainData.u.length, 1]);
+    const trainBetterMovieTensor = tf.tensor2d(trainData.b, [trainData.b.length, 1]);
+    const trainWorseMovieTensor = tf.tensor2d(trainData.w, [trainData.w.length, 1]);
+
+    const valUserTensor = tf.tensor2d(valData.u, [valData.u.length, 1]);
+    const valBetterMovieTensor = tf.tensor2d(valData.b, [valData.b.length, 1]);
+    const valWorseMovieTensor = tf.tensor2d(valData.w, [valData.w.length, 1]);
+
+    const totalBatches = Math.ceil(trainData.u.length / config.batchSize) * config.epochs;
 
     let batchCount = 0;
     let epochCount = 0;
-    let last_loss = null;
-    let last_val_loss = null;
     const lossHistory = [];
     const valLossHistory = [];
 
-    // Crear tensores para las entradas auxiliares
-    const trainMinusOneTensor = tf.fill([trainData.u.length, 1], -1);
-    const trainZeroTensor = tf.zeros([trainData.u.length, 1]);
-    const trainMarginTensor = tf.fill([trainData.u.length, 1], 1.0); // Margen de 1.0
-
-    const valMinusOneTensor = tf.fill([valData.u.length, 1], -1);
-    const valZeroTensor = tf.zeros([valData.u.length, 1]);
-    const valMarginTensor = tf.fill([valData.u.length, 1], 1.0); // Margen de 1.0
-
-    await model.fit([trainUserTensor, trainBetterMovieTensor, trainWorseMovieTensor, trainMinusOneTensor, trainZeroTensor, trainMarginTensor], tf.zeros([trainData.u.length]), {
-        epochs: epochs,
-        batchSize: batchSize,
-        validationData: [[valUserTensor, valBetterMovieTensor, valWorseMovieTensor, valMinusOneTensor, valZeroTensor, valMarginTensor], tf.zeros([valData.u.length])],
+    await model.fit([trainUserTensor, trainBetterMovieTensor, trainWorseMovieTensor], tf.zeros([trainData.u.length]), {
+        epochs: config.epochs,
+        batchSize: config.batchSize,
+        validationData: [[valUserTensor, valBetterMovieTensor, valWorseMovieTensor], tf.zeros([valData.u.length])],
         callbacks: {
             onBatchEnd: async (batch, logs) => {
                 batchCount++;
-                //const progress = (batchCount / totalBatches) * 100;
-                //progressBarCallback(progress);
-                progressBarCallback(batchCount, totalBatches, epochs);
-                if (last_loss == null) { last_loss = logs.loss.toFixed(4); }
+                progressBarCallback(batchCount, totalBatches, config.epochs);
             },
-            onEpochEnd: async (epoch, logs) => { 
+            onEpochEnd: async (epoch, logs) => {
                 epochCount++;
-                last_loss = logs.loss.toFixed(4);
-                last_val_loss = logs.val_loss.toFixed(4);
-                lossHistory.push(last_loss);
-                valLossHistory.push(last_val_loss);
+                lossHistory.push(logs.loss.toFixed(4));
+                valLossHistory.push(logs.val_loss.toFixed(4));
 
-                // Obtener los embeddings y considerar solo los dos primeros elementos para el gráfico
                 const userEmbeddings = (await userEmbeddingLayer.getWeights()[0].array()).map(embedding => embedding.slice(0, 2));
                 const movieEmbeddings = (await movieEmbeddingLayer.getWeights()[0].array()).map(embedding => embedding.slice(0, 2));
 
-                // Hacer predicciones para el nuevo usuario
                 const newUserEmbedding = tf.tensor(userEmbeddings[newUserIndex]);
                 const movieEmbeddingsTensor = tf.tensor(movieEmbeddings);
                 const predictions = await tf.matMul(movieEmbeddingsTensor, newUserEmbedding.reshape([2, 1])).array();
@@ -109,23 +105,33 @@ async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex,
                 self.postMessage({ type: 'plot', lossHistory, valLossHistory, userEmbeddings, movieEmbeddings });
                 self.postMessage({ type: 'predictions', predictions: predictions.flat(), newUserIndex });
 
-                statusCallback(`(Epoch ${epochCount}) Train_loss: ${last_loss}, Val_loss: ${last_val_loss}`);
+                statusCallback(`(Epoch ${epochCount}) Train_loss: ${logs.loss.toFixed(4)}, Val_loss: ${logs.val_loss.toFixed(4)}`);
             },
             onTrainEnd: () => {
                 statusCallback('Entrenamiento completado!');
-                progressBarCallback(totalBatches, totalBatches, epochs);
-                //progressBarCallback(100);
+                progressBarCallback(totalBatches, totalBatches, config.epochs);
             }
         }
     });
 }
 
+
 self.addEventListener('message', async (event) => {
     const { trainData, valData, numUsers, numMovies, newUserIndex } = event.data;
-    await trainModel(trainData, valData, numUsers, numMovies, newUserIndex, (status) => {
+
+    // Crear el diccionario de configuración
+    const config = {
+        dropoutRate: 0.1,
+        learningRate: 0.0001,
+        embeddingDim: 2,
+        batchSize: 256,
+        epochs: 100
+    };
+
+    // Entrenar el modelo
+    await trainModel(trainData, valData, numUsers, numMovies, newUserIndex, config, (status) => {
         self.postMessage({ type: 'status', status });
     }, (batchCount, totalBatches, epochs) => {
-        self.postMessage({ type: 'progress', batchCount, totalBatches, epochs});
-        //self.postMessage({ type: 'progress', progress });
+        self.postMessage({ type: 'progress', batchCount, totalBatches, epochs });
     });
 });
