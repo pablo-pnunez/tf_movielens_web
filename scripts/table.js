@@ -182,3 +182,93 @@ export const updatePredictions = async (predictions) => {
 
     createDataTable(true);
 };
+
+// Nuevo método para eliminar los valores fijados en los inputs
+export const resetFixedValues = () => {
+
+    var retVal = confirm("¿Deseas eliminar todas las valoraciones de películas?");
+    if( retVal == true ) {
+        new_user_table_data.data.forEach(fila => {
+            let inputHTML = '<span style="display:none">-1</span><input type="number" min="-1" max="10" value="-1" class="form-control" data-index="0">';
+            fila[1] = inputHTML;
+        });
+    
+        createDataTable();
+    }
+};
+
+// Exportar datos a csv
+export const exportToCSV = () => {
+    const csvRows = [];
+    
+    // Añadir la cabecera
+    csvRows.push(["movie", "score"]);
+  
+    // Añadir las filas de datos, excluyendo las notas con valor -1
+    new_user_table_data.data.forEach(row => {
+      const scoreValue = extractScoreValue(row[1]);
+      if (scoreValue !== "-1") {
+        const formattedRow = [
+          row[0],        // #
+          scoreValue,    // Nota
+        ];
+        csvRows.push(formattedRow.join(','));
+      }
+    });
+  
+    const csvString = "\uFEFF" + csvRows.join('\n');  // Añadir BOM para UTF-8
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'user_table_data.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+};
+  
+const extractScoreValue = (html) => {
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = html;
+    const input = tempElement.querySelector('input');
+    return input ? input.value : '';
+};
+
+// Importar datos de csv
+export const importFromCSV = (file) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const csv = event.target.result;
+      Papa.parse(csv, {
+        header: true,
+        complete: (results) => {
+          const data = results.data;
+          new_user_table_data.data = [];
+  
+          data.forEach((row, index) => {
+            const scoreValue = row["Nota"];
+            const scoreInput = `<span style="display:none">${String(scoreValue).padStart(3, '0')}</span><input type="number" min="-1" max="10" value="${scoreValue}" class="form-control" data-index="${index}"/>`;
+            new_user_table_data.data.push([
+              parseInt(row["#"]),
+              scoreInput,
+              row["Título"],
+              row["Predicción"]
+            ]);
+          });
+  
+          createDataTable();
+        }
+      });
+    };
+    reader.readAsText(file);
+};
+  
+// Método para manejar el evento de carga del archivo
+export const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        importFromCSV(file);
+    }
+};
+  

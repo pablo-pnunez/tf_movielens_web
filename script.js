@@ -1,5 +1,5 @@
 import { console_log } from './scripts/console.js';
-import { addMoviesToTable, addUserRatingsToTrainingData, updatePredictions, createDataTable } from './scripts/table.js';
+import { addMoviesToTable, addUserRatingsToTrainingData, updatePredictions, createDataTable, resetFixedValues, exportToCSV, importFromCSV} from './scripts/table.js';
 import { createEmbeddingsPlot, updateEmbeddingsPlot, createLossPlot, updateLossPlot } from './scripts/plot.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -23,7 +23,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
-    const btnReset = document.getElementById('btn-reset');
+    // const btnReset = document.getElementById('btn-reset');
+
+    const btnUserLoad = document.getElementById('btn-usr-load');
+    const btnUserSave = document.getElementById('btn-usr-save');
+    const btnUserClean = document.getElementById('btn-usr-clean');
 
     // Comprobar si WebGL está disponible
     if (tf.ENV.get('WEBGL_VERSION') > 0) {
@@ -79,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const toggleButtons = (isTraining) => {
         btnStart.disabled = isTraining;
         btnStop.disabled = !isTraining;
-        btnReset.disabled = isTraining;
+        // btnReset.disabled = isTraining;
 
         randomSeed.disabled = isTraining;
         embSize.disabled = isTraining;
@@ -87,6 +91,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         nEpochs.disabled = isTraining;
         batchSize.disabled = isTraining;
         learningRate.disabled = isTraining;
+
+        btnUserLoad.disabled = isTraining;
+        btnUserSave.disabled = isTraining;
+        btnUserClean.disabled = isTraining;
 
         createDataTable(isTraining)
     };
@@ -182,5 +190,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Event listeners para los botones
     btnStart.addEventListener('click', startTraining);
     btnStop.addEventListener('click', stopTraining);
+
+    btnUserLoad.addEventListener('click', importFromCSV);
+    btnUserSave.addEventListener('click', exportToCSV);
+    btnUserClean.addEventListener('click', resetFixedValues);
 
 });
