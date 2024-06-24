@@ -17,15 +17,17 @@ class MarginLayer extends tf.layers.Layer {
     getClassName() { return 'MarginLayer'; }
 }
 
-
 // Función para crear el modelo
 function createModel(numUsers, numMovies, config) {
+
     const userInput = tf.input({ shape: [1], name: 'userInput' });
     const betterMovieInput = tf.input({ shape: [1], name: 'betterMovieInput' });
     const worseMovieInput = tf.input({ shape: [1], name: 'worseMovieInput' });
 
-    const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: config.embeddingDim, inputLength: 1 });
-    const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: config.embeddingDim, inputLength: 1 });
+    const initializer = config.reproducible ? tf.initializers.glorotUniform({ seed: 2533 }) : tf.initializers.glorotUniform();
+
+    const userEmbeddingLayer = tf.layers.embedding({ inputDim: numUsers, outputDim: config.embeddingDim, inputLength: 1, embeddingsInitializer: initializer });
+    const movieEmbeddingLayer = tf.layers.embedding({ inputDim: numMovies, outputDim: config.embeddingDim, inputLength: 1, embeddingsInitializer: initializer });
 
     const userEmbedding = userEmbeddingLayer.apply(userInput);
     const betterMovieEmbedding = movieEmbeddingLayer.apply(betterMovieInput);
@@ -84,6 +86,7 @@ async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex,
     await model.fit([trainUserTensor, trainBetterMovieTensor, trainWorseMovieTensor], tf.zeros([trainData.u.length]), {
         epochs: config.epochs,
         batchSize: config.batchSize,
+        shuffle: config.reproducible ? false : true, // Ensure reproducibility
         validationData: [[valUserTensor, valBetterMovieTensor, valWorseMovieTensor], tf.zeros([valData.u.length])],
         callbacks: {
             onBatchEnd: async (batch, logs) => {

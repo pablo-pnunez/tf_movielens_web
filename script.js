@@ -157,7 +157,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             learningRate: parseFloat(learningRate.value),
             embeddingDim: parseInt(embSize.value),
             batchSize: parseInt(batchSize.value),
-            epochs: parseInt(nEpochs.value)
+            epochs: parseInt(nEpochs.value), 
+            reproducible: true, //!parseInt(randomSeed.value), 
         };
 
         // Iniciar el entrenamiento del modelo en el Web Worker
