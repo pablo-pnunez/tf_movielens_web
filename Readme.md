@@ -18,7 +18,5 @@ https://pablo-pnunez.github.io/tf_movielens_web/
 
 
 ## TODO
-
-* Solo han de aparecer las lineas del nuevo usuario cuando k=2, si es mayor, no tiene sentido.
 * Reparar hints
 

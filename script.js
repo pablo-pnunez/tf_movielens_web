@@ -117,6 +117,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Deshabilitar/habilitar botones
         toggleButtons(true);
 
+        // Crear el diccionario de configuración
+        const config = {
+            dropoutRate: parseFloat(regularizer.value),
+            learningRate: parseFloat(learningRate.value),
+            embeddingDim: parseInt(embSize.value),
+            batchSize: parseInt(batchSize.value),
+            epochs: parseInt(nEpochs.value), 
+            reproducible: true, //!parseInt(randomSeed.value), 
+        };
+
         // Escuchar los mensajes del Web Worker para el entrenamiento
         trainWorker.addEventListener('message', (event) => {
             const { type, status, batchCount, totalBatches, epochs, lossHistory, valLossHistory, userEmbeddings, movieEmbeddings, predictions } = event.data;
@@ -135,10 +145,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             } else if (type === 'plot') {
                 if (!embeddingsPlotCreated) {
-                    createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex);
+                    createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex);
                     embeddingsPlotCreated = true;
                 } else {
-                    updateEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex);
+                    updateEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex);
                 }
                 if (!lossPlotCreated) {
                     createLossPlot(lossHistory, valLossHistory);
@@ -150,16 +160,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 updatePredictions(predictions);
             }
         });
-
-        // Crear el diccionario de configuración
-        const config = {
-            dropoutRate: parseFloat(regularizer.value),
-            learningRate: parseFloat(learningRate.value),
-            embeddingDim: parseInt(embSize.value),
-            batchSize: parseInt(batchSize.value),
-            epochs: parseInt(nEpochs.value), 
-            reproducible: true, //!parseInt(randomSeed.value), 
-        };
 
         // Iniciar el entrenamiento del modelo en el Web Worker
         trainWorker.postMessage({ 

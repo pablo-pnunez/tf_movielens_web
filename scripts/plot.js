@@ -3,7 +3,7 @@ var full_screen_icon = { 'width': 512, 'height': 512, 'path': "M512 512v-208l-80
 var full_screen_config = { responsive: true, modeBarButtonsToAdd: [{ name: 'Increase Size', icon: full_screen_icon, click: function(gd) { $($(gd).parents(".col-sm-12")[0]).toggleClass("col-xl-6"); Plotly.Plots.resize(gd); } }] }
 
 // Función para crear o actualizar gráficos de embeddings
-const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex = null, plotType = 'new') => {
+const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex = null, plotType = 'new') => {
     const userCoords = userEmbeddings.slice(0, numUsers);
     const movieCoords = movieEmbeddings.slice(0, numMovies);
 
@@ -46,28 +46,35 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
             name: 'Nuevo usuario',
             marker: { color: 'blue'}
         };
+        data.push(newUserTrace);
 
-        // Línea desde el nuevo usuario hasta el origen
-        const newUserToOriginLine = {
-            x: [userCoords[newUserIndex][0], 0],
-            y: [userCoords[newUserIndex][1], 0],
-            mode: 'lines',
-            type: 'scatter',
-            showlegend: false,
-            line: { color: 'blue', dash: 'dash' }
-        };
+        // Si k=2 se dibuja el producto escalar
+        if (config.embeddingDim == 2) {
 
-        // Línea perpendicular que pasa por el origen
-        const perpendicularLine = {
-            x: [-userCoords[newUserIndex][1], userCoords[newUserIndex][1]],
-            y: [userCoords[newUserIndex][0], -userCoords[newUserIndex][0]],
-            mode: 'lines',
-            type: 'scatter',
-            showlegend: false,
-            line: { color: 'blue'}
-        };
+            // Línea desde el nuevo usuario hasta el origen
+            const newUserToOriginLine = {
+                x: [userCoords[newUserIndex][0], 0],
+                y: [userCoords[newUserIndex][1], 0],
+                mode: 'lines',
+                type: 'scatter',
+                showlegend: false,
+                line: { color: 'blue', dash: 'dash' }
+            };
 
-        data.push(newUserTrace, newUserToOriginLine, perpendicularLine);
+            // Línea perpendicular que pasa por el origen
+            const perpendicularLine = {
+                x: [-userCoords[newUserIndex][1], userCoords[newUserIndex][1]],
+                y: [userCoords[newUserIndex][0], -userCoords[newUserIndex][0]],
+                mode: 'lines',
+                type: 'scatter',
+                showlegend: false,
+                line: { color: 'blue'}
+            };
+
+            data.push(newUserToOriginLine, perpendicularLine);
+
+        }
+
     }
 
     const layout = {
@@ -97,11 +104,11 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
     }
 };
 
-export const createEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex = null) => {
-    plotEmbeddings(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex, 'new');
+export const createEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex = null) => {
+    plotEmbeddings(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex, 'new');
 };
 
-export const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex = null) => {
+export const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex = null) => {
     const userCoords = userEmbeddings.slice(0, numUsers);
     const movieCoords = movieEmbeddings.slice(0, numMovies);
 
@@ -112,16 +119,23 @@ export const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numU
         'y': [userCoords.map(coord => coord[1]), movieCoords.map(coord => coord[1])],
     };
 
+    const traces = [0,1]
+
     if (newUserIndex !== null) {
         new_data['x'].push([userCoords[newUserIndex][0]]);
         new_data['y'].push([userCoords[newUserIndex][1]]);
-        new_data['x'].push([userCoords[newUserIndex][0], 0]);
-        new_data['y'].push([userCoords[newUserIndex][1], 0]);
-        new_data['x'].push([-userCoords[newUserIndex][1], userCoords[newUserIndex][1]]);
-        new_data['y'].push([userCoords[newUserIndex][0], -userCoords[newUserIndex][0]]);
+        traces.push(2);
+        if (config.embeddingDim == 2) {
+            new_data['x'].push([userCoords[newUserIndex][0], 0]);
+            new_data['y'].push([userCoords[newUserIndex][1], 0]);
+            new_data['x'].push([-userCoords[newUserIndex][1], userCoords[newUserIndex][1]]);
+            new_data['y'].push([userCoords[newUserIndex][0], -userCoords[newUserIndex][0]]);
+            traces.push(3, 4);
+
+        }
     }
 
-    Plotly.update('emb-plot', new_data, {}, [0,1,2,3,4]);
+    Plotly.update('emb-plot', new_data, {}, traces);
 
 };
 
