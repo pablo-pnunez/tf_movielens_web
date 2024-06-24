@@ -18,5 +18,4 @@ https://pablo-pnunez.github.io/tf_movielens_web/
 
 
 ## TODO
-* Reparar hints
-
+* Selección de dimensiones 2D?
