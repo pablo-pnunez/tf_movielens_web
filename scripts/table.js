@@ -32,7 +32,7 @@ export const createDataTable = (disabled=false) => {
         new_user_table = $('#new-user-table').DataTable({
             data: new_user_table_data.data,
             columns: new_user_table_data.columns,
-            dom: 'frtp',
+            dom: 'frltp',
             pagingType: 'simple_numbers',
             responsive: true,
             language: { url: 'es-ES.json' },
@@ -200,22 +200,40 @@ export const resetFixedValues = () => {
 // Exportar datos a csv
 export const exportToCSV = () => {
     const csvRows = [];
-    
-    // Añadir la cabecera
-    csvRows.push(["movie", "score"]);
-  
-    // Añadir las filas de datos, excluyendo las notas con valor -1
-    new_user_table_data.data.forEach(row => {
-      const scoreValue = extractScoreValue(row[1]);
-      if (scoreValue !== "-1") {
-        const formattedRow = [
-          row[0],        // #
-          scoreValue,    // Nota
-        ];
-        csvRows.push(formattedRow.join(','));
-      }
-    });
-  
+
+    const hasPredictions = new_user_table_data.data.some(row => row[3] !== 'N/D');
+
+    if (hasPredictions) {
+        // Añadir la cabecera
+        csvRows.push(["movie", "score", "prediction"]);
+
+        // Exportar todas las películas y sus predicciones
+        new_user_table_data.data.forEach(row => {
+            const scoreValue = extractScoreValue(row[1]);
+            const formattedRow = [
+                row[0],        // #
+                scoreValue,    // Nota
+                row[3]         // Predicción
+            ];
+            csvRows.push(formattedRow.join(','));
+        });
+    } else {
+        // Añadir la cabecera
+        csvRows.push(["movie", "score"]);
+
+        // Exportar solo las películas valoradas por el usuario
+        new_user_table_data.data.forEach(row => {
+            const scoreValue = extractScoreValue(row[1]);
+            if (scoreValue !== "-1") {
+                const formattedRow = [
+                    row[0],        // #
+                    scoreValue,    // Nota
+                ];
+                csvRows.push(formattedRow.join(','));
+            }
+        });
+    }
+
     const csvString = "\uFEFF" + csvRows.join('\n');  // Añadir BOM para UTF-8
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
@@ -227,7 +245,7 @@ export const exportToCSV = () => {
     a.click();
     document.body.removeChild(a);
 };
-  
+
 const extractScoreValue = (html) => {
     const tempElement = document.createElement('div');
     tempElement.innerHTML = html;
@@ -236,39 +254,53 @@ const extractScoreValue = (html) => {
 };
 
 // Importar datos de csv
-export const importFromCSV = (file) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const csv = event.target.result;
-      Papa.parse(csv, {
-        header: true,
-        complete: (results) => {
-          const data = results.data;
-          new_user_table_data.data = [];
-  
-          data.forEach((row, index) => {
-            const scoreValue = row["Nota"];
-            const scoreInput = `<span style="display:none">${String(scoreValue).padStart(3, '0')}</span><input type="number" min="-1" max="10" value="${scoreValue}" class="form-control" data-index="${index}"/>`;
-            new_user_table_data.data.push([
-              parseInt(row["#"]),
-              scoreInput,
-              row["Título"],
-              row["Predicción"]
-            ]);
-          });
-  
-          createDataTable();
+export const importFromCSV = () => {
+    // Crear un elemento input para seleccionar el archivo
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+
+    // Agregar un evento de cambio al input para manejar la selección del archivo
+    input.onchange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const csv = event.target.result;
+                Papa.parse(csv, {
+                    header: true,
+                    complete: (results) => {
+                        const data = results.data;
+                        // Crear un objeto para almacenar las puntuaciones del usuario
+                        const userScores = {};
+
+                        // Rellenar userScores con las puntuaciones del CSV
+                        data.forEach(row => {
+                            const movieId = parseInt(row["movie"]);
+                            const scoreValue = parseInt(row["score"]);
+                            if (!isNaN(movieId) && !isNaN(scoreValue) && movieId >= 0 && movieId < 100) {
+                                userScores[movieId] = scoreValue;
+                            }
+                        });
+
+                        // Actualizar new_user_table_data.data con las puntuaciones del CSV
+                        new_user_table_data.data.forEach((row, index) => {
+                            const movieId = index;
+                            const score = userScores.hasOwnProperty(movieId) ? userScores[movieId] : -1;
+                            const scoreInput = `<span style="display:none">${String(score).padStart(3, '0')}</span><input type="number" min="-1" max="10" value="${score}" class="form-control" data-index="${movieId}"/>`;
+                            row[1] = scoreInput;
+                            row[3] = 'N/D'; // Establecer predicción a 'N/D'
+                        });
+
+                        createDataTable();
+                        alert("Puntuaciones cargadas!")
+                    }
+                });
+            };
+            reader.readAsText(file);
         }
-      });
     };
-    reader.readAsText(file);
+
+    // Disparar el clic del input para abrir la ventana de selección de archivos
+    input.click();
 };
-  
-// Método para manejar el evento de carga del archivo
-export const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        importFromCSV(file);
-    }
-};
-  

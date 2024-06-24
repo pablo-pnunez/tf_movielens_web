@@ -9,6 +9,7 @@
     resize: none;
     padding: 10px;
     font-size: small;
+    border-radius: 5px;
 }
 
 body{
@@ -76,4 +77,9 @@ span.input-group-text {
 
  .progress{
     height: 20px;
+ }
+
+ .dt-length, .dt-search{
+    display: inline-block;
+    margin-left: 1em;
  }
