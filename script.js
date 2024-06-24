@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnStop.disabled = !isTraining;
         // btnReset.disabled = isTraining;
 
-        randomSeed.disabled = isTraining;
+        // randomSeed.disabled = isTraining;
         embSize.disabled = isTraining;
         regularizer.disabled = isTraining;
         nEpochs.disabled = isTraining;

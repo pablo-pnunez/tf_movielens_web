@@ -102,8 +102,29 @@ export const createEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numU
 };
 
 export const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex = null) => {
-    plotEmbeddings(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, newUserIndex,'update');
+    const userCoords = userEmbeddings.slice(0, numUsers);
+    const movieCoords = movieEmbeddings.slice(0, numMovies);
+
+    const user_names = Array.from({ length: numUsers }, (v, i) => `Usuario ${(i + 1).toString().padStart(3, '0')}`);
+
+    const new_data = {
+        'x': [userCoords.map(coord => coord[0]), movieCoords.map(coord => coord[0])],
+        'y': [userCoords.map(coord => coord[1]), movieCoords.map(coord => coord[1])],
+    };
+
+    if (newUserIndex !== null) {
+        new_data['x'].push([userCoords[newUserIndex][0]]);
+        new_data['y'].push([userCoords[newUserIndex][1]]);
+        new_data['x'].push([userCoords[newUserIndex][0], 0]);
+        new_data['y'].push([userCoords[newUserIndex][1], 0]);
+        new_data['x'].push([-userCoords[newUserIndex][1], userCoords[newUserIndex][1]]);
+        new_data['y'].push([userCoords[newUserIndex][0], -userCoords[newUserIndex][0]]);
+    }
+
+    Plotly.update('emb-plot', new_data, {}, [0,1,2,3,4]);
+
 };
+
 
 // Función para crear o actualizar gráficos de pérdida
 const plotLoss = (lossHistory, valLossHistory, plotType = 'new') => {
@@ -153,5 +174,10 @@ export const createLossPlot = async (lossHistory, valLossHistory) => {
 };
 
 export const updateLossPlot = async (lossHistory, valLossHistory) => {
-    plotLoss(lossHistory, valLossHistory, 'update');
+    const update = {
+        'x': [lossHistory.map((_, i) => i + 1), valLossHistory.map((_, i) => i + 1)],
+        'y': [lossHistory, valLossHistory]
+    };
+
+    Plotly.update('loss-plot', update);
 };
