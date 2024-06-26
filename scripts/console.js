@@ -10,8 +10,10 @@ export const console_log = (line) => {
     const timestamp = `[${hours}:${minutes}:${seconds}] `;
     const fullLine = "\n" + timestamp + line;
 
-    queue.push(fullLine);
-    processQueue();
+    consola.textContent += fullLine;
+    consola.scrollTop = consola.scrollHeight;
+    //queue.push(fullLine);
+    //processQueue();
 };
 
 const processQueue = () => {
