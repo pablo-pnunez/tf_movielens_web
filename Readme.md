@@ -16,6 +16,6 @@ https://pablo-pnunez.github.io/tf_movielens_web/
 5. Haz también una valoración del ranking final (con 30 películas valoradas), indicando si te parece aceptable o no, en función de tus gustos.
 
 
-
 ## TODO
-* Selección de dimensiones 2D?
+* Selección de dimensiones a visualizar 2D?
+* Guardar la tabla y la configuración en localstorage para evitar que se pierda todo al reiniciar.
