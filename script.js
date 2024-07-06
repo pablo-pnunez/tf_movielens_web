@@ -2,6 +2,41 @@ import { console_log } from './scripts/console.js';
 import { addMoviesToTable, addUserRatingsToTrainingData, updatePredictions, createDataTable, resetFixedValues, exportToCSV, importFromCSV} from './scripts/table.js';
 import { createEmbeddingsPlot, updateEmbeddingsPlot, createLossPlot, updateLossPlot } from './scripts/plot.js';
 
+const load_session_values = (items) => {
+    let has_loaded = false;
+    items.forEach((item, index) => {
+        if(item!=null){
+            const name = $(item).attr("id")
+            const value = $(item).attr("value")
+            if (sessionStorage.getItem(name)){
+                $(item).attr("value", sessionStorage.getItem(name));
+                has_loaded = true;
+            }
+            else{
+                sessionStorage.setItem(name, value);
+            }
+
+            $(item).on("change", function(x, y){
+                const name = $(x.currentTarget).attr("id")
+                const value = x.currentTarget.value
+                sessionStorage.setItem(name, value);
+            });
+        }
+    });
+
+    if(has_loaded){
+        alert("Se han cargado los valores de la sesión previa.\n Puedes reiniciar los valores en el botón de la papelera.")
+    };
+
+};
+
+const clear_session_values = () => {
+    var retVal = confirm("¿Deseas reiniciar la aplicación?");
+    if(retVal==true){
+        sessionStorage.clear();
+    }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Poner los tooltips
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
@@ -23,11 +58,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
-    // const btnReset = document.getElementById('btn-reset');
+    const btnReset = document.getElementById('btn-reset');
 
     const btnUserLoad = document.getElementById('btn-usr-load');
     const btnUserSave = document.getElementById('btn-usr-save');
     const btnUserClean = document.getElementById('btn-usr-clean');
+
+    // Cargar los valores de la sesión anterior
+    load_session_values([randomSeed, embSize, regularizer, nEpochs, batchSize, learningRate]);
 
     // Comprobar si WebGL está disponible
     if (tf.ENV.get('WEBGL_VERSION') > 0) {
@@ -35,6 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         console_log('WebGL is not enabled');
     }
+
 
     // Cargar los datos de entrenamiento
     console_log("Cargando los datos de entrenamiento...");
@@ -83,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const toggleButtons = (isTraining) => {
         btnStart.disabled = isTraining;
         btnStop.disabled = !isTraining;
-        // btnReset.disabled = isTraining;
+        btnReset.disabled = isTraining;
 
         // randomSeed.disabled = isTraining;
         embSize.disabled = isTraining;
@@ -191,6 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Event listeners para los botones
     btnStart.addEventListener('click', startTraining);
     btnStop.addEventListener('click', stopTraining);
+    btnReset.addEventListener('click', clear_session_values);
 
     btnUserLoad.addEventListener('click', importFromCSV);
     btnUserSave.addEventListener('click', exportToCSV);

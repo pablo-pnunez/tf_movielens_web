@@ -1,5 +1,6 @@
 import {console_log} from './console.js';
 
+// const new_user_table_data = sessionStorage.getItem("new_user_table_data") ? JSON.parse(sessionStorage.getItem("new_user_table_data")): { data: [], columns: [ { title: "#" }, { title: "Nota" }, { title: "Título" }, { title: "Predicción" } ] };
 const new_user_table_data = { data: [], columns: [ { title: "#" }, { title: "Nota" }, { title: "Título" }, { title: "Predicción" } ] };
 let new_user_table = null;
 let table_state = null;
