@@ -8,7 +8,7 @@
     <title>Recommender System</title>
     <link href="inc/datatables/datatables.min.css" rel="stylesheet">
     <link href="inc/bootstrap/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="inc/bootstrap/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="style.css">
     
 </head>
@@ -69,7 +69,27 @@
                             <button id="btn-stop" type="button" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-title="Detener entrenamiento" disabled><i class="bi bi-stop-fill m-2"></i></button>
                             <button id="btn-start" type="button" class="btn btn-success" data-bs-toggle="tooltip" data-bs-title="Comenzar entrenamiento" disabled><i class="bi bi-play-fill m-2"></i></button>
                         </div>
-                        <button id="btn-reset" type="button" class="btn btn-secondary"><i class="bi bi-arrow-clockwise m-2"></i></button>
+                        <div style="display: grid;" data-bs-toggle="tooltip" data-bs-title="Reiniciar configuración"><button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#resetModal"><i class="bi bi-arrow-clockwise m-2"></i></button></div>
+                        
+                        <!-- Modal -->
+                        <div class="modal fade" id="resetModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="exampleModalLabel">¿Reiniciar aplicación?</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                Se eliminarán todos los valores modificados (modelo, configuración y puntuaciones) y se volverá al estado inicial.
+                                </div>
+                                <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button id="btn-reset" type="button" class="btn btn-primary">Reiniciar</button>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    
                     </div>
                 </div>
 
@@ -163,6 +183,13 @@
 
     </div>
 
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="sessionToast" class="toast text-bg-success" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="toast-body">
+            Se han cargado los valores de la sesión previa.
+          </div>
+        </div>
+      </div>
 
     <script src="inc/jquery/jquery-3.7.1.min.js"></script>
     <script src="inc/tensorflow/tf.min.js"></script>

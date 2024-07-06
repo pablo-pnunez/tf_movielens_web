@@ -25,16 +25,17 @@ const load_session_values = (items) => {
     });
 
     if(has_loaded){
-        alert("Se han cargado los valores de la sesión previa.\n Puedes reiniciar los valores en el botón de la papelera.")
+        const toastLiveExample = document.getElementById('sessionToast');
+        const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastLiveExample)
+        toastBootstrap.show();
+        // alert("Se han cargado los valores de la sesión previa.\n Puedes reiniciar los valores en el botón de la papelera.")
     };
 
 };
 
 const clear_session_values = () => {
-    var retVal = confirm("¿Deseas reiniciar la aplicación?");
-    if(retVal==true){
-        sessionStorage.clear();
-    }
+    sessionStorage.clear();
+    location.reload();
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
