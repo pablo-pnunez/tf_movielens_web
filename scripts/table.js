@@ -61,7 +61,10 @@ export const addMoviesToTable = (movies, userData) => {
         createDataTable();
         saveTableDataToSession();
     } else {
+        // Asegurarse de que la columna "Predicción" sea "N/D"
+        new_user_table_data.data.forEach(row => { row[3] = 'N/D'; });
         createDataTable();
+        saveTableDataToSession();
     }
 };
 
