@@ -22,32 +22,32 @@ export const walkthrough = () => {
         },
         {
             title: "Gráfica de embeddings",
-            content: "Una vez inicies el entrenamiento, aquí verás dos barras de progreso, una para la época actual y otra para el entrenamiento del modelo al completo.",
+            content: "Durante el entrenamiento, aquí aparecerá una gráfica de dispersión donde cada punto representa el embedding de un usuario (azul) o una película (rojo).",
             target: "#emb-card div.card",
         },
         {
             title: "Gráfica de pérdida",
-            content: "Una vez inicies el entrenamiento, aquí verás dos barras de progreso, una para la época actual y otra para el entrenamiento del modelo al completo.",
+            content: "En esta otra gráfica se representará la pérdida del modelo para el conjunto de entrenamiento y validación en cada una de las épocas.",
             target: "#loss-card div.card",
         },
         {
             title: "Consola de log",
-            content: "Una vez inicies el entrenamiento, aquí verás dos barras de progreso, una para la época actual y otra para el entrenamiento del modelo al completo.",
+            content: "En esta consola podrás ver información textual de lo que sucede en la aplicación.",
             target: "#console-card div.card",
         },
         {
             title: "Usuario nuevo",
-            content: "Una vez inicies el entrenamiento, aquí verás dos barras de progreso, una para la época actual y otra para el entrenamiento del modelo al completo.",
+            content: "En esta sección podrás crear un nuevo usuario, para ello solo tienes que dar notas a las películas que desees.",
             target: "#new-user-card div.card",
         },
         {
             title: "Cambiar notas",
-            content: "Una vez inicies el entrenamiento, aquí verás dos barras de progreso, una para la época actual y otra para el entrenamiento del modelo al completo.",
+            content: "Por defecto, se dan notas a varias películas, pero puedes cambiarlas en esta columna.",
             target: "#new-user-card td input",
         },
         {
             title: "Importar, exportar y borrar notas",
-            content: "Una vez inicies el entrenamiento, aquí verás dos barras de progreso, una para la época actual y otra para el entrenamiento del modelo al completo.",
+            content: "Con estos botones podrás importar, exportar o eliminar todas las notas del usuario nuevo.<br> Si no hay valoraciones, el nuevo usuario no aparecerá en el gráfico de embeddings.",
             target: "#new-user-buttons",
         }
     ];
