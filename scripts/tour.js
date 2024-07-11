@@ -52,8 +52,20 @@ export const walkthrough = () => {
         }
     ];
     
-    const tg = new tourguide.TourGuideClient({steps: steps});
+    const tg = new tourguide.TourGuideClient({
+        steps: steps, 
+        nextLabel:'<i class="bi bi-caret-right-fill"></i>',
+        prevLabel:'<i class="bi bi-caret-left-fill"></i>',
+        finishLabel:'<i class="bi bi-stop-fill"></i>',
+    });
 
-    tg.start();
+    tg.onFinish(()=>{
+        localStorage.setItem("tour-done", "true")
+     })
 
+    const tour_done = localStorage.getItem("tour-done")? true : false
+
+    if(!tour_done){
+        tg.start();
+    }
 }
