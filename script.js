@@ -1,6 +1,7 @@
 import { console_log } from './scripts/console.js';
 import { addMoviesToTable, addUserRatingsToTrainingData, updatePredictions, createDataTable, resetFixedValues, exportToCSV, importFromCSV} from './scripts/table.js';
 import { createEmbeddingsPlot, updateEmbeddingsPlot, createLossPlot, updateLossPlot } from './scripts/plot.js';
+import { walkthrough } from './scripts/tour.js';
 
 const load_session_values = (items) => {
     let has_loaded = false;
@@ -236,5 +237,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnUserLoad.addEventListener('click', importFromCSV);
     btnUserSave.addEventListener('click', exportToCSV);
     btnUserClean.addEventListener('click', resetFixedValues);
+
+    // Iniciar el walkthrough si es la primera vez
+    walkthrough();
 
 });
