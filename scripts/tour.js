@@ -50,7 +50,7 @@ export const walkthrough = () => {
         },
         {
             title: "Cambiar notas",
-            content: "A modo de ejemplo se ha dado notas a varias películas, pero puedes modificarlas en esta columna.",
+            content: "A modo de ejemplo se ha dado notas a varias películas, pero puedes modificarlas en esta columna.<br>Un '-1' implica que la película no se ha valorado.",
             target: "#new-user-card td input",
             order: 9,
         },
