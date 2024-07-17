@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
     
     let trainWorker;
+    let globalMovieEmbeddings = null; // Global variable to hold movie embeddings
 
     // Obtener elementos de la interfaz
     const consola = document.getElementById('console');
@@ -185,6 +186,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 batch_progressBar.style.width = `${epoch_progress}%`;
 
             } else if (type === 'plot') {
+                globalMovieEmbeddings = movieEmbeddings;
+
                 if (!embeddingsPlotCreated) {
                     createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex);
                     embeddingsPlotCreated = true;
@@ -235,7 +238,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnReset.addEventListener('click', clear_session_values);
 
     btnUserLoad.addEventListener('click', importFromCSV);
-    btnUserSave.addEventListener('click', exportToCSV);
+    btnUserSave.addEventListener('click', function(){
+        exportToCSV(globalMovieEmbeddings);
+    });
     btnUserClean.addEventListener('click', resetFixedValues);
 
     // Iniciar el walkthrough si es la primera vez

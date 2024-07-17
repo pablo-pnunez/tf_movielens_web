@@ -165,27 +165,42 @@ export const resetFixedValues = () => {
     }
 };
 
-export const exportToCSV = () => {
-    const csvRows = [];
-    const hasPredictions = new_user_table_data.data.some(row => row[3] !== 'N/D');
+export const exportToCSV = (movie_embeddings=null) => {
+    // Obtener los estados de los checkboxes en el modal
+    const includeNotas = document.getElementById("export-notas").checked;
+    let includePreds = document.getElementById("export-preds").checked;
+    const includeNames = document.getElementById("export-names").checked;
+    let includeEmbs = document.getElementById("export-embs").checked;
 
-    if (hasPredictions) {
-        csvRows.push(["movie", "score", "prediction"]);
-        new_user_table_data.data.forEach(row => {
-            const scoreValue = extractScoreValue(row[1]);
-            const formattedRow = [row[0], scoreValue, row[3]];
-            csvRows.push(formattedRow.join(','));
-        });
-    } else {
-        csvRows.push(["movie", "score"]);
-        new_user_table_data.data.forEach(row => {
-            const scoreValue = extractScoreValue(row[1]);
-            if (scoreValue !== "-1") {
-                const formattedRow = [row[0], scoreValue];
-                csvRows.push(formattedRow.join(','));
-            }
-        });
-    }
+    // Verificar si existe el modelo
+    includePreds = new_user_table_data.data.some(row => row[3] !== 'N/D') && includePreds;
+    includeEmbs = new_user_table_data.data.some(row => row[3] !== 'N/D') && includeEmbs;
+
+    // Crear encabezados según la selección del usuario
+    const csvRows = [];
+    let headers = ["movie"];
+    if (includeNotas) headers.push("score");
+    if (includePreds) headers.push("prediction");
+    if (includeNames) headers.push("name");
+    if (includeEmbs) headers.push("embedding");
+    csvRows.push(headers.join(','));
+
+
+    // Crear las filas del CSV según la selección del usuario
+    new_user_table_data.data.forEach((row, index) => {
+        const scoreValue = extractScoreValue(row[1]);
+        const prediction = row[3] !== 'N/D' ? row[3] : '';
+        const title = "\""+row[2]+"\""; // Assuming this contains the movie title
+        // Assuming embeddings are stored somewhere, add logic to fetch them
+
+        const formattedRow = [row[0]];
+        if (includeNotas) formattedRow.push(scoreValue);
+        if (includePreds) formattedRow.push(prediction);
+        if (includeNames) formattedRow.push(title);
+        if (includeEmbs) formattedRow.push(movie_embeddings[index]);
+
+        csvRows.push(formattedRow.join(','));
+    });
 
     const csvString = "\uFEFF" + csvRows.join('\n');
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });

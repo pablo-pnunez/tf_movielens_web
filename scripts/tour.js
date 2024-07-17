@@ -50,7 +50,7 @@ export const walkthrough = () => {
         },
         {
             title: "Cambiar notas",
-            content: "Por defecto, se dan notas a varias películas, pero puedes cambiarlas en esta columna.",
+            content: "A modo de ejemplo se ha dado notas a varias películas, pero puedes modificarlas en esta columna.",
             target: "#new-user-card td input",
             order: 9,
         },

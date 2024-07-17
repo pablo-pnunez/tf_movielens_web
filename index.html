@@ -160,9 +160,61 @@
                                     <div id="new-user-buttons" class="col-sm-6 col-lg-4 col-xl-3 mt-3">
                                         <div class="btn-group" role="group">
                                             <button id="btn-usr-load" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Importar notas"><i class="bi bi-upload m-2"></i></button>
-                                            <button id="btn-usr-save" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Exportar notas"><i class="bi bi-download m-2"></i></button>
+                                            <div data-bs-toggle="tooltip" data-bs-title="Exportar notas">
+                                                <button id="btn-usr-save-modal" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exportModal" style="border-top-left-radius: 0; border-bottom-left-radius: 0;"><i class="bi bi-download m-2"></i></button>
+                                            </div>
                                         </div>
                                         <button id="btn-usr-clean" type="button" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-title="Eliminar notas"><i class="bi bi-x-circle-fill m-2"></i></button>
+
+                                        <!-- Modal -->
+                                        <div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                <h1 class="modal-title fs-5"> Configurar exportación</h1>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" value="" id="export-notas" checked>
+                                                                <label class="form-check-label" for="export-notas"> Notas </label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" value="" id="export-names">
+                                                                <label class="form-check-label" for="export-names"> Nombres de películas </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" value="" id="export-preds" checked>
+                                                                <label class="form-check-label" for="export-preds"> Predicciones del modelo </label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" value="" id="export-embs">
+                                                                <label class="form-check-label" for="export-embs"> Embeddings de películas </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <hr>
+                                                    <div class="alert alert-warning" role="alert">
+                                                        Las predicciones y embeddings solo se exportarán si hay un modelo entrenado.
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button id="btn-usr-save" type="button" class="btn btn-primary">Exportar CSV</button>
+                                                </div>
+                                            </div>
+                                            </div>
+                                        </div>
 
                                     </div>
                                 </div>
