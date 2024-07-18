@@ -1,17 +1,28 @@
 // Variables para que funcione el modo full screen
 var full_screen_icon = { 'width': 512, 'height': 512, 'path': "M512 512v-208l-80 80-96-96-48 48 96 96-80 80z M512 0h-208l80 80-96 96 48 48 96-96 80 80z M0 512h208l-80-80 96-96-48-48-96 96-80-80z M0 0v208l80-80 96 96 48-48-96-96 80-80z" }
-var full_screen_config = { responsive: true, modeBarButtonsToAdd: [{ name: 'Increase Size', icon: full_screen_icon, click: function(gd) { $($(gd).parents(".col-sm-12")[0]).toggleClass("col-xl-6"); Plotly.Plots.resize(gd); } }] }
+var full_screen_config = { responsive: true, modeBarButtonsToAdd: [{ name: 'Increase Size', icon: full_screen_icon, click: function (gd) { $($(gd).parents(".col-sm-12")[0]).toggleClass("col-xl-6"); Plotly.Plots.resize(gd); } }] }
+
+let userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex;
 
 // Función para crear o actualizar gráficos de embeddings
-const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex = null, plotType = 'new') => {
+const plotEmbeddings = (newUserEmbeddings, newMovieEmbeddings, newNumUsers, newNumMovies, newMovies, newConfig, newNewUserIndex = null, plotType = 'new', xDim = 0, yDim = 1) => {
+    // Actualiza las variables globales con los nuevos valores
+    userEmbeddings = newUserEmbeddings;
+    movieEmbeddings = newMovieEmbeddings;
+    numUsers = newNumUsers;
+    numMovies = newNumMovies;
+    movies = newMovies;
+    config = newConfig;
+    newUserIndex = newNewUserIndex;
+    
     const userCoords = userEmbeddings.slice(0, numUsers);
     const movieCoords = movieEmbeddings.slice(0, numMovies);
 
     const user_names = Array.from({ length: numUsers }, (v, i) => `Usuario ${(i + 1).toString().padStart(3, '0')}`);
 
     const userTrace = {
-        x: userCoords.map(coord => coord[0]),
-        y: userCoords.map(coord => coord[1]),
+        x: userCoords.map(coord => coord[xDim]),
+        y: userCoords.map(coord => coord[yDim]),
         hoverinfo: 'text',
         text: user_names,
         mode: 'markers',
@@ -22,8 +33,8 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
     };
 
     const movieTrace = {
-        x: movieCoords.map(coord => coord[0]),
-        y: movieCoords.map(coord => coord[1]),
+        x: movieCoords.map(coord => coord[xDim]),
+        y: movieCoords.map(coord => coord[yDim]),
         text: movies.Title,
         hoverinfo: 'text',
         mode: 'markers',
@@ -37,14 +48,14 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
 
     if (newUserIndex !== null) {
         const newUserTrace = {
-            x: [userCoords[newUserIndex][0]],
-            y: [userCoords[newUserIndex][1]],
+            x: [userCoords[newUserIndex][xDim]],
+            y: [userCoords[newUserIndex][yDim]],
             mode: 'markers',
             hoverinfo: 'text',
             type: 'scatter',
             text: 'Nuevo usuario',
             name: 'Nuevo usuario',
-            marker: { color: 'blue'}
+            marker: { color: 'blue' }
         };
         data.push(newUserTrace);
 
@@ -53,8 +64,8 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
 
             // Línea desde el nuevo usuario hasta el origen
             const newUserToOriginLine = {
-                x: [userCoords[newUserIndex][0], 0],
-                y: [userCoords[newUserIndex][1], 0],
+                x: [userCoords[newUserIndex][xDim], 0],
+                y: [userCoords[newUserIndex][yDim], 0],
                 mode: 'lines',
                 type: 'scatter',
                 showlegend: false,
@@ -63,12 +74,12 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
 
             // Línea perpendicular que pasa por el origen
             const perpendicularLine = {
-                x: [-userCoords[newUserIndex][1], userCoords[newUserIndex][1]],
-                y: [userCoords[newUserIndex][0], -userCoords[newUserIndex][0]],
+                x: [-userCoords[newUserIndex][yDim], userCoords[newUserIndex][yDim]],
+                y: [userCoords[newUserIndex][xDim], -userCoords[newUserIndex][xDim]],
                 mode: 'lines',
                 type: 'scatter',
                 showlegend: false,
-                line: { color: 'blue'}
+                line: { color: 'blue' }
             };
 
             data.push(newUserToOriginLine, perpendicularLine);
@@ -77,11 +88,12 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
 
     }
 
+
     const layout = {
         margin: { t: 50, l: 50, r: 50, b: 50 },
         //legend: { x: 1, xanchor: 'right', y: 1 },
-        scene:{
-            aspectmode:"manual",
+        scene: {
+            aspectmode: "manual",
             aspectratio: { x: 1, y: 1 },
         },
         legend: {
@@ -92,8 +104,6 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
             bordercolor: '#b1b1b1',
             borderwidth: 2
         },
-        xaxis: { title: 'X' },
-        yaxis: { title: 'Y' },
         hovermode: "closest",
     };
 
@@ -104,32 +114,41 @@ const plotEmbeddings = (userEmbeddings, movieEmbeddings, numUsers, numMovies, mo
     }
 };
 
-export const createEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex = null) => {
-    plotEmbeddings(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex, 'new');
+export const createEmbeddingsPlot = async (newUserEmbeddings, newMovieEmbeddings, newNumUsers, newNumMovies, newMovies, newConfig, newNewUserIndex = null, xDim = 0, yDim = 1) => {
+    plotEmbeddings(newUserEmbeddings, newMovieEmbeddings, newNumUsers, newNumMovies, newMovies, newConfig, newNewUserIndex, 'new', xDim, yDim);
 };
 
-export const updateEmbeddingsPlot = async (userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex = null) => {
+export const updateEmbeddingsPlot = async (newUserEmbeddings = userEmbeddings, newMovieEmbeddings = movieEmbeddings, newNumUsers = numUsers, newNumMovies = numMovies, newMovies = movies, newConfig = config, newNewUserIndex = newUserIndex, xDim = 0, yDim = 1) => {
+    // Actualiza las variables globales con los nuevos valores si se proporcionan
+    if (newUserEmbeddings) userEmbeddings = newUserEmbeddings;
+    if (newMovieEmbeddings) movieEmbeddings = newMovieEmbeddings;
+    if (newNumUsers) numUsers = newNumUsers;
+    if (newNumMovies) numMovies = newNumMovies;
+    if (newMovies) movies = newMovies;
+    if (newConfig) config = newConfig;
+    if (newNewUserIndex !== null) newUserIndex = newNewUserIndex;
+
     const userCoords = userEmbeddings.slice(0, numUsers);
     const movieCoords = movieEmbeddings.slice(0, numMovies);
 
     const user_names = Array.from({ length: numUsers }, (v, i) => `Usuario ${(i + 1).toString().padStart(3, '0')}`);
 
     const new_data = {
-        'x': [userCoords.map(coord => coord[0]), movieCoords.map(coord => coord[0])],
-        'y': [userCoords.map(coord => coord[1]), movieCoords.map(coord => coord[1])],
+        'x': [userCoords.map(coord => coord[xDim]), movieCoords.map(coord => coord[xDim])],
+        'y': [userCoords.map(coord => coord[yDim]), movieCoords.map(coord => coord[yDim])],
     };
 
-    const traces = [0,1]
+    const traces = [0, 1]
 
     if (newUserIndex !== null) {
-        new_data['x'].push([userCoords[newUserIndex][0]]);
-        new_data['y'].push([userCoords[newUserIndex][1]]);
+        new_data['x'].push([userCoords[newUserIndex][xDim]]);
+        new_data['y'].push([userCoords[newUserIndex][yDim]]);
         traces.push(2);
         if (config.embeddingDim == 2) {
-            new_data['x'].push([userCoords[newUserIndex][0], 0]);
-            new_data['y'].push([userCoords[newUserIndex][1], 0]);
-            new_data['x'].push([-userCoords[newUserIndex][1], userCoords[newUserIndex][1]]);
-            new_data['y'].push([userCoords[newUserIndex][0], -userCoords[newUserIndex][0]]);
+            new_data['x'].push([userCoords[newUserIndex][xDim], 0]);
+            new_data['y'].push([userCoords[newUserIndex][yDim], 0]);
+            new_data['x'].push([-userCoords[newUserIndex][yDim], userCoords[newUserIndex][yDim]]);
+            new_data['y'].push([userCoords[newUserIndex][xDim], -userCoords[newUserIndex][xDim]]);
             traces.push(3, 4);
 
         }

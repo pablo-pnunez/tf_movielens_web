@@ -83,3 +83,13 @@ span.input-group-text {
     display: inline-block;
     margin-left: 1em;
  }
+
+ .plot-options{
+    height: 41px;
+    background-color: #f1f1f1;
+    margin: auto;
+    padding: 5px;
+    margin-bottom: -8px;
+    margin-top: 8px;
+    border-radius: 0px 0px 6px 6px;
+ }

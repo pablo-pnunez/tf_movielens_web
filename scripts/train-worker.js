@@ -98,8 +98,8 @@ async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex,
                 lossHistory.push(logs.loss.toFixed(4));
                 valLossHistory.push(logs.val_loss.toFixed(4));
 
-                const userEmbeddings = (await userEmbeddingLayer.getWeights()[0].array()).map(embedding => embedding.slice(0, 2));
-                const movieEmbeddings = (await movieEmbeddingLayer.getWeights()[0].array()).map(embedding => embedding.slice(0, 2));
+                const userEmbeddings = (await userEmbeddingLayer.getWeights()[0].array());//.map(embedding => embedding.slice(0, 2));
+                const movieEmbeddings = (await movieEmbeddingLayer.getWeights()[0].array());//.map(embedding => embedding.slice(0, 2));
 
                 self.postMessage({ type: 'plot', lossHistory, valLossHistory, userEmbeddings, movieEmbeddings });
 
@@ -107,7 +107,7 @@ async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex,
                 if(newUserIndex!=null){
                     const newUserEmbedding = tf.tensor(userEmbeddings[newUserIndex]);
                     const movieEmbeddingsTensor = tf.tensor(movieEmbeddings);
-                    const predictions = await tf.matMul(movieEmbeddingsTensor, newUserEmbedding.reshape([2, 1])).array();
+                    const predictions = await tf.matMul(movieEmbeddingsTensor, newUserEmbedding.reshape([config.embeddingDim, 1])).array();
                     self.postMessage({ type: 'predictions', predictions: predictions.flat(), newUserIndex });
                 }
 

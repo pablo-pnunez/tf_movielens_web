@@ -14,7 +14,3 @@ https://pablo-pnunez.github.io/tf_movielens_web/
 4. Haz un estudio para analizar los resultados, obtenidos con las distintas ejecuciones, tratanto de ver si el modelo converge hacia un ranking más o menos estable. No es importante si el sistema converge hacia una solución más o menos adecuada, sino si converge hacia un ranking estable (bueno o malo). Para ello debes escoger alguna medida para comparar las salidas (rankings) de las distintas ejecuciones y justificar por qué te parece razonable usarla.
 
 5. Haz también una valoración del ranking final (con 30 películas valoradas), indicando si te parece aceptable o no, en función de tus gustos.
-
-
-## TODO
-* Selección de dimensiones a visualizar 2D?

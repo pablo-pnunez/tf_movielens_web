@@ -39,6 +39,7 @@ const clear_session_values = () => {
     location.reload();
 };
 
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Poner los tooltips
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
@@ -46,6 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     let trainWorker;
     let globalMovieEmbeddings = null; // Global variable to hold movie embeddings
+    let emb_plot_x = 0;
+    let emb_plot_y = 1;
 
     // Obtener elementos de la interfaz
     const consola = document.getElementById('console');
@@ -143,6 +146,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         createDataTable(isTraining)
     };
 
+    // Función para gestionar las plot-options
+    const plot_options = (config) => {
+        $("#emb_x_dim").attr("value", emb_plot_x);
+        $("#emb_y_dim").attr("value", emb_plot_y);
+        $("#emb_x_dim").attr("max", config.embeddingDim-1);
+        $("#emb_y_dim").attr("max", config.embeddingDim-1);
+        $(".plot-options").show()
+
+        $('#emb_x_dim, #emb_y_dim').off('change').on('change', plot_options_event);
+    }
+
+    // Función para gestionar los eventos de las plot-options
+    const plot_options_event = (e) => {
+        emb_plot_x = parseInt($("#emb_x_dim").val());
+        emb_plot_y = parseInt($("#emb_y_dim").val());
+        updateEmbeddingsPlot(undefined, undefined, undefined, undefined, undefined, undefined, null, emb_plot_x, emb_plot_y);
+    }
+
     // Función para iniciar el entrenamiento del modelo en el Web Worker
     const startTraining = () => {
         console_log("Iniciando entrenamiento...");
@@ -191,10 +212,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 globalMovieEmbeddings = movieEmbeddings;
 
                 if (!embeddingsPlotCreated) {
-                    createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex);
+                    // Activamos los dropdowns de las dimensiones
+                    plot_options(config);
+                    createEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex, emb_plot_x, emb_plot_y);
                     embeddingsPlotCreated = true;
                 } else {
-                    updateEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex);
+                    // Activamos los dropdowns de las dimensiones
+                    plot_options(config);
+                    updateEmbeddingsPlot(userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex, emb_plot_x, emb_plot_y);
                 }
                 if (!lossPlotCreated) {
                     createLossPlot(lossHistory, valLossHistory);
