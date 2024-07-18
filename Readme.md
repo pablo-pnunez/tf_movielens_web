@@ -18,4 +18,3 @@ https://pablo-pnunez.github.io/tf_movielens_web/
 
 ## TODO
 * Selección de dimensiones a visualizar 2D?
-* Guardar la tabla y la configuración en localstorage para evitar que se pierda todo al reiniciar.

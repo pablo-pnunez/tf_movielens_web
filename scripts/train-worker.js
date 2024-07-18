@@ -116,6 +116,7 @@ async function trainModel(trainData, valData, numUsers, numMovies, newUserIndex,
             onTrainEnd: () => {
                 statusCallback('Entrenamiento completado!');
                 progressBarCallback(totalBatches, totalBatches, config.epochs);
+                self.postMessage({ type: 'onTrainEnd'}); // Enviar mensaje para activar botones
             }
         }
     });

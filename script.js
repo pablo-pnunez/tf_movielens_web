@@ -62,9 +62,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
     const btnReset = document.getElementById('btn-reset');
+    const btnResetModal = $('#btn-reset-modal button')[0];
 
     const btnUserLoad = document.getElementById('btn-usr-load');
     const btnUserSave = document.getElementById('btn-usr-save');
+    const btnUserSaveModal = document.getElementById('btn-usr-save-modal');
     const btnUserClean = document.getElementById('btn-usr-clean');
 
     // Cargar los valores de la sesión anterior
@@ -125,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const toggleButtons = (isTraining) => {
         btnStart.disabled = isTraining;
         btnStop.disabled = !isTraining;
-        btnReset.disabled = isTraining;
+        btnResetModal.disabled = isTraining;
 
         // randomSeed.disabled = isTraining;
         embSize.disabled = isTraining;
@@ -135,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         learningRate.disabled = isTraining;
 
         btnUserLoad.disabled = isTraining;
-        btnUserSave.disabled = isTraining;
+        btnUserSaveModal.disabled = isTraining;
         btnUserClean.disabled = isTraining;
 
         createDataTable(isTraining)
@@ -202,7 +204,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }else if (type === 'predictions') {
                 updatePredictions(predictions);
+            } else if (type === 'onTrainEnd') {
+                toggleButtons(false);
             }
+            
         });
 
         // Iniciar el entrenamiento del modelo en el Web Worker

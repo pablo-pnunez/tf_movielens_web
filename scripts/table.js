@@ -212,6 +212,10 @@ export const exportToCSV = (movie_embeddings=null) => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    
+    //Cerramos el modal una vez terminado
+    $('#exportModal').modal("hide")
+
 };
 
 const extractScoreValue = (html) => {
