@@ -3,6 +3,7 @@ var full_screen_icon = { 'width': 512, 'height': 512, 'path': "M512 512v-208l-80
 var full_screen_config = { responsive: true, modeBarButtonsToAdd: [{ name: 'Increase Size', icon: full_screen_icon, click: function (gd) { $($(gd).parents(".col-sm-12")[0]).toggleClass("col-xl-6"); Plotly.Plots.resize(gd); } }] }
 
 let userEmbeddings, movieEmbeddings, numUsers, numMovies, movies, config, newUserIndex;
+let emb_layout = {};
 
 // Función para crear o actualizar gráficos de embeddings
 const plotEmbeddings = (newUserEmbeddings, newMovieEmbeddings, newNumUsers, newNumMovies, newMovies, newConfig, newNewUserIndex = null, plotType = 'new', xDim = 0, yDim = 1) => {
@@ -14,7 +15,7 @@ const plotEmbeddings = (newUserEmbeddings, newMovieEmbeddings, newNumUsers, newN
     movies = newMovies;
     config = newConfig;
     newUserIndex = newNewUserIndex;
-    
+
     const userCoords = userEmbeddings.slice(0, numUsers);
     const movieCoords = movieEmbeddings.slice(0, numMovies);
 
@@ -88,12 +89,21 @@ const plotEmbeddings = (newUserEmbeddings, newMovieEmbeddings, newNumUsers, newN
 
     }
 
+    const allXCoords = [...userTrace.x, ...movieTrace.x];
+    const allYCoords = [...userTrace.y, ...movieTrace.y];
 
-    const layout = {
+    const minCoord = Math.floor(Math.min(Math.min(...allXCoords), Math.min(...allYCoords)) * 10) / 10;
+    const maxCoord = Math.ceil(Math.max(Math.max(...allXCoords), Math.max(...allYCoords)) * 10) / 10;
+    const range = [minCoord, maxCoord];
+
+
+    emb_layout = {
         margin: { t: 50, l: 50, r: 50, b: 50 },
         //legend: { x: 1, xanchor: 'right', y: 1 },
+        xaxis: { },
+        yaxis: {  scaleanchor: "x", scaleratio: 1 },
         scene: {
-            aspectmode: "manual",
+            aspectmode: "cube",
             aspectratio: { x: 1, y: 1 },
         },
         legend: {
@@ -108,9 +118,9 @@ const plotEmbeddings = (newUserEmbeddings, newMovieEmbeddings, newNumUsers, newN
     };
 
     if (plotType === 'new') {
-        Plotly.newPlot('emb-plot', data, layout, full_screen_config);
+        Plotly.newPlot('emb-plot', data, emb_layout, full_screen_config);
     } else {
-        Plotly.react('emb-plot', data, layout, full_screen_config);
+        Plotly.react('emb-plot', data, emb_layout, full_screen_config);
     }
 };
 
@@ -154,7 +164,21 @@ export const updateEmbeddingsPlot = async (newUserEmbeddings = userEmbeddings, n
         }
     }
 
-    Plotly.update('emb-plot', new_data, {}, traces);
+    // const allXCoords = [...new_data.x[0], ...new_data.x[1]];
+    // const allYCoords = [...new_data.y[0], ...new_data.y[1]];
+
+    // const minCoord = Math.floor(Math.min(Math.min(...allXCoords), Math.min(...allYCoords)) * 10) / 10;
+    // const maxCoord = Math.ceil(Math.max(Math.max(...allXCoords), Math.max(...allYCoords)) * 10) / 10;
+    
+    // const range = [minCoord, maxCoord];
+
+    // emb_layout.xaxis.range = range;
+    // emb_layout.xaxis.dtick = (maxCoord - minCoord) / 10;
+
+    // emb_layout.yaxis.range = range;
+    // emb_layout.yaxis.dtick = (maxCoord - minCoord) / 10;
+
+    Plotly.update('emb-plot', new_data, emb_layout, traces);
 
 };
 
