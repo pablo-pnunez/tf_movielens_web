@@ -166,6 +166,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Función para iniciar el entrenamiento del modelo en el Web Worker
     const startTraining = () => {
+        // Eliminar los gráficos si ya existían de antes
+        if (embeddingsPlotCreated){
+            embeddingsPlotCreated = false;
+            Plotly.purge("emb-plot");
+        };
+        if (lossPlotCreated){
+            lossPlotCreated = false;
+            Plotly.purge("loss-plot");
+        };
+
         console_log("Iniciando entrenamiento...");
 
         // cambiar los nombres de las columnas
