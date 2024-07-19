@@ -158,6 +158,7 @@ export const resetFixedValues = () => {
         new_user_table_data.data.forEach(fila => {
             let inputHTML = '<span style="display:none">-1</span><input type="number" min="-1" max="10" value="-1" class="form-control" data-index="0">';
             fila[1] = inputHTML;
+            fila[3] = 'N/D';
         });
 
         createDataTable();
@@ -255,6 +256,7 @@ export const importFromCSV = () => {
                             const score = userScores.hasOwnProperty(movieId) ? userScores[movieId] : -1;
                             const scoreInput = `<span style="display:none">${String(score).padStart(3, '0')}</span><input type="number" min="-1" max="10" value="${score}" class="form-control" data-index="${movieId}"/>`;
                             row[1] = scoreInput;
+                            row[3] = 'N/D';
                         });
 
                         createDataTable();
