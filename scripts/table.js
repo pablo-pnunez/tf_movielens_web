@@ -252,7 +252,7 @@ export const importFromCSV = () => {
                         });
 
                         new_user_table_data.data.forEach((row, index) => {
-                            const movieId = index;
+                            const movieId = index+1;
                             const score = userScores.hasOwnProperty(movieId) ? userScores[movieId] : -1;
                             const scoreInput = `<span style="display:none">${String(score).padStart(3, '0')}</span><input type="number" min="-1" max="10" value="${score}" class="form-control" data-index="${movieId}"/>`;
                             row[1] = scoreInput;
