@@ -67,6 +67,7 @@ export const walkthrough = () => {
         nextLabel:'<i class="bi bi-caret-right-fill"></i>',
         prevLabel:'<i class="bi bi-caret-left-fill"></i>',
         finishLabel:'<i class="bi bi-stop-fill"></i>',
+        exitOnClickOutside:false,
     });
 
     tg.onFinish(()=>{
